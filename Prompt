@@ -1,0 +1,612 @@
+Build a web application called "Field Notes" — a UX portfolio documentation platform for practitioners working in unconventional spaces (retail, hospitality, service environments). The core insight: UX is a mindset, not a job title. This platform helps people document their real work as it happens and turn it into credible portfolio evidence.
+
+---
+
+TECH STACK
+
+- React (Vite)
+- Plain CSS (no Tailwind, no UI libraries)
+- localStorage for persistence
+- No backend, no auth, no database
+- Single deployable build via npm run build
+- Google Fonts: DM Serif Display (italic) + DM Mono
+
+---
+
+VISUAL IDENTITY — WARM PARCHMENT THEME
+
+The base theme never changes. Only the accent color changes based on user preference.
+
+Base tokens (always fixed):
+- --bg:    #f7f5f0  (warm off-white background)
+- --bg2:   #f0ede6  (warm secondary surface — changes slightly per accent)
+- --ink2:  #5a5750  (secondary text)
+- --muted: #9c9890  (muted text)
+- --faint: #b0ada6  (faint/hint text)
+- --line:  #d0cdc6  (borders and lines)
+- --line2: #e8e5e0  (subtle dividers)
+- --white: #ffffff  (card surfaces)
+
+Accent system — --ink and --accent are set by the user's chosen theme:
+
+DEFAULT — Ink (black):
+  --ink:         #2c2a26
+  --accent:      #2c2a26
+  --accent-text: #f7f5f0
+  --bg2:         #f0ede6
+  --active-bg:   #ede9e2
+
+FOREST — Deep forest green:
+  --ink:         #2d4a35
+  --accent:      #2d4a35
+  --accent-text: #f7f5f0
+  --bg2:         #e4ede5
+  --active-bg:   #dceadd
+
+INDIGO — Deep indigo blue:
+  --ink:         #2e3a6e
+  --accent:      #2e3a6e
+  --accent-text: #f7f5f0
+  --bg2:         #e4e6f0
+  --active-bg:   #dce0ef
+
+UMBER — Warm dark brown:
+  --ink:         #5c3d1e
+  --accent:      #5c3d1e
+  --accent-text: #f7f5f0
+  --bg2:         #ede5da
+  --active-bg:   #e8ddd0
+
+PLUM — Deep plum purple:
+  --ink:         #4a2d4e
+  --accent:      #4a2d4e
+  --accent-text: #f7f5f0
+  --bg2:         #ece2ee
+  --active-bg:   #e6d8e8
+
+Apply the accent by writing the chosen token set onto :root via a data attribute:
+  <html data-accent="ink">    → default
+  <html data-accent="forest"> → forest green
+  etc.
+
+In global.css, define each accent as an attribute selector:
+  :root, [data-accent="ink"]    { --ink: #2c2a26; --accent: #2c2a26; ... }
+  [data-accent="forest"]        { --ink: #2d4a35; --accent: #2d4a35; ... }
+  [data-accent="indigo"]        { --ink: #2e3a6e; --accent: #2e3a6e; ... }
+  [data-accent="umber"]         { --ink: #5c3d1e; --accent: #5c3d1e; ... }
+  [data-accent="plum"]          { --ink: #4a2d4e; --accent: #4a2d4e; ... }
+
+Save the chosen accent to localStorage under "fieldnotes_accent". Load on mount and apply to document.documentElement.setAttribute("data-accent", value).
+
+Phase colors (fixed regardless of accent — these never change):
+  --phase-observe: #7b9cc4
+  --phase-define:  #b88fc2
+  --phase-ideate:  #8aab7e
+  --phase-test:    #d4856a
+  --phase-launch:  #9c8060
+  --phase-reflect: #9c9890
+
+Typography:
+  --font-serif: 'DM Serif Display', Georgia, serif
+  --font-mono:  'DM Mono', monospace
+  --font-sans:  system-ui, -apple-system, sans-serif
+
+Aesthetic rules (non-negotiable):
+- NO gradients, NO shadows, NO blur
+- 0.5px borders everywhere (not 1px)
+- Border radius: 2–3px for components, 0 for single-sided borders
+- Feels like an architectural blueprint or a tailor's pattern — precise, minimal, warm
+- NEVER feels like a generic SaaS app
+- All text: sentence case, never ALL CAPS except small labels (8–10px, letter-spacing 2–3px)
+- Logo: DM Serif Display italic always
+- Numbers/stats: DM Mono weight 300
+
+---
+
+APPLICATION STRUCTURE
+
+Layout:
+- Fixed top nav (48px height)
+- Two-column layout below: sidebar (186px wide) + main canvas area
+- Main canvas stacks vertically: canvas bar → river SVG → story validator chips → artifact strip → moment cards strip → edit panel (slides open)
+
+Top Nav:
+- Left: "field notes" in DM Serif Display italic, 17px, color: var(--ink)
+- Middle: scrollable project tabs, each with colored dot + project name. Active tab: color var(--ink), 1.5px bottom border in var(--accent)
+- "+" icon button to create new project
+- Right: "For myself" ghost button, "Portfolio" filled button (background: var(--accent), color: var(--accent-text))
+- Far right: settings gear icon (⚙) that opens the Account Settings panel
+
+Sidebar:
+- "Projects" section label (8px uppercase, var(--faint))
+- List of projects: colored dot + name + moment count. Active project background: var(--active-bg)
+- "+ new project" text button
+- Horizontal divider
+- "Phases" section label with phase color key
+- Horizontal divider
+- "Learning log" section with learnings as italic quotes, left border in project color
+- "+ add learning" text button
+
+---
+
+THE RIVER — CORE VISUALIZATION
+
+SVG canvas (viewBox="0 0 580 200"):
+- SVG_W=580, SVG_H=200, Y_MIN=22, Y_MAX=178, Y_MID=100, X_START=50, X_END=540
+- Left vertical axis + bottom horizontal axis with arrow marker
+- Three faint dashed grid lines at y=48, y=100, y=152
+- Y-axis labels: "smooth" top-left, "friction" bottom-left (both color: var(--line))
+- X-axis label: "time →" far right
+
+River curve:
+- Sort moments by x
+- Build cubic bezier path: start (X_START, Y_MID) → through each moment → end (X_END, last_y)
+- Midpoint control: cx = (prev.x + cur.x) / 2
+- Fill under curve: var(--accent) at 4% opacity
+- Curve stroke: var(--accent), strokeWidth 2, opacity 0.65
+
+Each moment dot:
+- Outer pulse: phase color, r=11 (active: r=15), opacity 0.13
+- Inner dot: phase color, r=5 (active: r=7), stroke white 1.5px
+- Title: 8px, font-weight 500, var(--ink), truncated at 17 chars
+- Subtitle: 7px, var(--muted), offset 11px from title
+- Label position: above dot if dot is below midline, below dot if above midline
+
+getSvgPoint function:
+  const rect = svg.getBoundingClientRect()
+  return {
+    x: (clientX - rect.left) * (SVG_W / rect.width),
+    y: (clientY - rect.top)  * (SVG_H / rect.height)
+  }
+
+Interactions:
+- Click empty canvas → create moment at coordinates
+- Click dot → open edit panel
+- Drag dot vertically → update y in real time, river redraws
+- Hover dot → show artifact tooltip
+- Touch support for all interactions
+
+Empty state: italic serif placeholder text centered in SVG
+
+---
+
+MOMENT DATA MODEL
+
+{
+  id: number,
+  x: number,         // clamped X_START–X_END
+  y: number,         // clamped Y_MIN–Y_MAX
+  title: string,
+  sub: string,
+  detail: string,    // include decisions + what was NOT done
+  phase: string,     // observe | define | ideate | test | launch | reflect
+  photos: string[]   // base64
+}
+
+---
+
+EDIT PANEL
+
+Slides open with CSS max-height transition (0 → 260px).
+
+Row 1: Title input + Sub input + Phase pills (6 pills, selected fills with phase color)
+Row 2: Detail textarea (flex:2) + Photos row (40×40 thumbnails + add button)
+Actions: Save (var(--accent) bg) · Delete (red text) · Cancel (ghost)
+Live sync: title and sub update river labels as user types.
+
+---
+
+PROJECT DATA MODEL
+
+{
+  id: number,
+  name: string,
+  color: string,
+  moments: Moment[],
+  learning: string
+}
+
+Default projects on first load:
+1. "POS Workflow" #2c2a26, 5 moments (observe→define→ideate→test→launch)
+2. "Queue Fix" #7b9cc4, 3 moments
+3. "Drink Recipe UX" #8aab7e, 2 moments
+(see previous prompt for full moment detail text)
+
+localStorage key: "fieldnotes_v1"
+Accent key: "fieldnotes_accent" (separate from main state)
+
+---
+
+ACCOUNT SETTINGS PANEL
+
+Triggered by the gear icon (⚙) in the top nav far right.
+Opens as a right-side slide-in drawer (320px wide) from the right edge of the app.
+Has its own overlay backdrop (rgba(44,42,38,0.15)) covering the canvas only.
+Close button (✕) in top-right corner of the drawer.
+
+The drawer has four sections separated by dividers:
+
+SECTION 1 — Profile
+Label: "Profile"
+- Display name input (placeholder: "Your name")
+- Role / title input (placeholder: "e.g. UX Designer, Barista, Shop Manager")
+- Tagline input (placeholder: "One sentence about your practice")
+These appear in the "For myself" showcase header.
+Save button at bottom of section.
+
+SECTION 2 — Accent color
+Label: "Accent color"
+Subtext: "Changes the primary color across the whole app."
+Five color options displayed as a horizontal row of swatches (28px circles):
+- Ink      #2c2a26  — label "Ink"
+- Forest   #2d4a35  — label "Forest"
+- Indigo   #2e3a6e  — label "Indigo"
+- Umber    #5c3d1e  — label "Umber"
+- Plum     #4a2d4e  — label "Plum"
+
+Each swatch: 28px circle in its color. Selected state: 2px border in var(--ink) with 2px white gap (box-shadow: 0 0 0 2px white, 0 0 0 4px var(--ink)).
+Clicking a swatch immediately applies the accent to the whole app (no save needed — live preview).
+Selected accent name shown below swatches in 9px uppercase.
+Save to localStorage key "fieldnotes_accent" on click.
+
+SECTION 3 — Voice calibration
+Label: "Your voice"
+Subtext: "Helps the platform write in your voice, not ours."
+Three inputs (same as onboarding):
+1. "What do you notice first when you walk into a new space?"
+2. "What frustrates you most about how things usually work?"
+3. "What does a good day at work feel like?"
+Pre-filled from localStorage voiceProfile if exists.
+"Save voice" button.
+
+SECTION 4 — Data
+Label: "Data"
+- "Export all data" button — downloads a JSON file of the full state (projects + moments + learnings)
+- "Reset to defaults" button (red text) — clears localStorage and reloads with default projects. Requires window.confirm before executing.
+- Small text below: "Your data lives only on this device. Nothing is sent to any server."
+
+---
+
+VOICE CALIBRATION ONBOARDING
+
+Show only on first launch (voiceProfile is null in localStorage AND no saved projects exist).
+Full-screen centered layout on var(--bg).
+Logo "field notes" in DM Serif Display italic.
+Heading: "Before we begin, help us find your voice." (DM Serif Display, 28px)
+Subtext: "These answers are private. They help the platform write in your voice."
+Three inputs (same questions as account settings section 3).
+"Get started" button (var(--accent) background).
+On click: save voiceProfile to localStorage, load default projects, show main app.
+If user closes or skips: save empty voiceProfile {} so onboarding never shows again.
+
+---
+
+THE 7 PORTFOLIO FEATURES
+
+FEATURE 1 — Artifact hover tooltip
+Hover within 20px of a moment dot → show small popup card (position:absolute within river zone):
+- Phase label in phase color (8px uppercase)
+- Moment title (10px, font-weight 500)
+- Artifact type badges if photos attached
+- Sub text
+Below river: horizontal artifact timeline strip. Thumbnails with type label + date. "+" to add.
+
+FEATURE 2 — Story blocks panel
+Accessible via "Story blocks" toggle button in canvas bar.
+Six block types with weight:
+- "What changed" #8aab7e weight 30
+- "Why it matters" #7b9cc4 weight 20
+- "Human problem" #b88fc2 weight 20
+- "Sudden constraint" #d4856a weight 15
+- "Key decision" #9c8060 weight 10
+- "Real quote" #9c9890 weight 5
+Click blocks to place. Story completeness = sum of placed weights (0–100%), shown as thin progress bar.
+
+FEATURE 3 — Story validator
+Four status chips between river and artifact strip. Updates live:
+1. Problem — green if has "observe" moment
+2. Process — green if 3+ moments
+3. Outcome — green if has "launch" moment
+4. Decisions — green if any detail contains "not"
+Colors: green (#eaf3de/#c0dd97/#27500a) · amber (#faeeda/#fac775/#633806) · red (#fcebeb/#f7c1c1/#a32d2d)
+
+FEATURE 4 — Contribution view
+Toggle "River" | "Contribution" in canvas bar.
+Horizontal bar chart: noticed / proposed / decided / tested / presented.
+Bars use phase colors. Below: auto-generated contribution signature paragraph.
+
+FEATURE 5 — Voice calibration
+See onboarding section above + account settings section 3.
+
+FEATURE 6 — Always-editable showcase draft
+In portfolio showcase: faded sentences (#b0ada6) = AI scaffolding. Full ink (var(--ink)) = owned by user.
+Click sentence → contentEditable = true.
+Track edits per project in localStorage.
+Show "X% your voice" indicator.
+Edits persist across sessions.
+
+FEATURE 7 — Learning log + emerging POV
+One learning per project. Written after project closes.
+In sidebar: italic quote with project color left border.
+In "For myself" showcase: learning block with project color left border.
+If 2+ learnings exist: show "Emerging point of view" block at bottom of sidebar learning section.
+Dark background (var(--ink)), generated synthesis in DM Serif Display italic, var(--bg) text.
+
+---
+
+TWO SHOWCASE OVERLAYS
+
+Both open as position:absolute overlays. Scrollable. Close button top-right.
+Close button and overlay logo use var(--ink) and var(--accent) consistently.
+
+SHOWCASE A — "For myself"
+Tone: warm, direct, celebratory, second person.
+
+If profile name is set (from account settings): show "Your season in field notes, [Name]" as eyebrow.
+Sections:
+1. Eyebrow: PROJECT NAME · YOUR FIELD NOTES
+2. Heading: "Look at what you actually did." (DM Serif Display, 34px)
+3. Stats row: Moments | Phases | Photos (DM Mono numbers, 26px)
+4. Moment list with phase dot + mood note
+5. Learning block (project color left border)
+6. UX signature block (var(--ink) bg, DM Serif italic, var(--bg) text)
+
+SHOWCASE B — "Portfolio"
+Tone: professional UX language, third-person capable.
+
+Sections:
+1. Eyebrow + project title (DM Serif Display, 32px)
+2. Tag pills + phase badges
+3. Story validator chips (warn if incomplete)
+4. Depth selector: Glance | Read | Deep (active uses var(--accent) bg)
+5. Depth content (see previous prompt for full content per depth)
+6. "X% your voice" indicator
+
+---
+
+MODALS
+
+New project modal:
+- DM Serif Display italic title
+- Name input + 8 color swatches
+- Create / Cancel
+
+Add learning modal:
+- Textarea pre-filled if editing
+- Save / Cancel
+
+Modal backdrop: rgba(44,42,38,0.30), click closes.
+
+---
+
+TOAST NOTIFICATIONS
+Bottom-center, position:absolute. Background var(--accent), text var(--accent-text).
+Slides up, fades after 2200ms.
+Messages: "Moment saved" · "Moment deleted" · "Project created" · "Learning saved" · "Settings saved" · "Voice saved" · "Accent updated"
+
+---
+
+COMPONENT FILE STRUCTURE
+
+src/
+  App.jsx
+  components/
+    TopNav.jsx
+    Sidebar.jsx
+    RiverCanvas.jsx
+    ArtifactStrip.jsx
+    MomentCards.jsx
+    EditPanel.jsx
+    StoryValidator.jsx
+    ContribView.jsx
+    ShowcaseSelf.jsx
+    ShowcasePublic.jsx
+    LearningLog.jsx
+    VoiceCalibration.jsx
+    AccountSettings.jsx      ← new: slide-in drawer
+    NewProjectModal.jsx
+    Toast.jsx
+  data/
+    defaults.js
+    phases.js
+    accents.js               ← new: accent color definitions
+  hooks/
+    useStorage.js
+    useDrag.js
+    useAccent.js             ← new: accent load/save/apply hook
+  styles/
+    global.css               ← accent attribute selectors live here
+    app.css
+
+---
+
+ACCENT DEFINITIONS FILE (data/accents.js)
+
+export const ACCENTS = [
+  {
+    id: 'ink',
+    name: 'Ink',
+    hex: '#2c2a26',
+    ink: '#2c2a26',
+    accentText: '#f7f5f0',
+    bg2: '#f0ede6',
+    activeBg: '#ede9e2',
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    hex: '#2d4a35',
+    ink: '#2d4a35',
+    accentText: '#f7f5f0',
+    bg2: '#e4ede5',
+    activeBg: '#dceadd',
+  },
+  {
+    id: 'indigo',
+    name: 'Indigo',
+    hex: '#2e3a6e',
+    ink: '#2e3a6e',
+    accentText: '#f7f5f0',
+    bg2: '#e4e6f0',
+    activeBg: '#dce0ef',
+  },
+  {
+    id: 'umber',
+    name: 'Umber',
+    hex: '#5c3d1e',
+    ink: '#5c3d1e',
+    accentText: '#f7f5f0',
+    bg2: '#ede5da',
+    activeBg: '#e8ddd0',
+  },
+  {
+    id: 'plum',
+    name: 'Plum',
+    hex: '#4a2d4e',
+    ink: '#4a2d4e',
+    accentText: '#f7f5f0',
+    bg2: '#ece2ee',
+    activeBg: '#e6d8e8',
+  },
+];
+
+---
+
+ACCENT HOOK (hooks/useAccent.js)
+
+- On mount: read "fieldnotes_accent" from localStorage (default: "ink")
+- Apply: document.documentElement.setAttribute("data-accent", accentId)
+- Expose: currentAccent, setAccent(id)
+- setAccent: saves to localStorage + applies data-accent attribute immediately
+- Used in AccountSettings and App
+
+---
+
+APP STATE SHAPE
+
+{
+  projects: Project[],
+  activeProjId: number,
+  activeMomId: number | null,
+  nextProjId: number,
+  nextMomId: number,
+  voiceProfile: { q1: string, q2: string, q3: string } | null,
+  profile: { name: string, role: string, tagline: string },
+  canvasView: 'river' | 'contrib',
+  showcase: 'self' | 'public' | null,
+  settingsOpen: boolean,
+  toast: string | null
+}
+
+---
+
+GLOBAL CSS STRUCTURE (global.css)
+
+:root,
+[data-accent="ink"] {
+  --bg:          #f7f5f0;
+  --bg2:         #f0ede6;
+  --active-bg:   #ede9e2;
+  --ink:         #2c2a26;
+  --accent:      #2c2a26;
+  --accent-text: #f7f5f0;
+  --ink2:        #5a5750;
+  --muted:       #9c9890;
+  --faint:       #b0ada6;
+  --line:        #d0cdc6;
+  --line2:       #e8e5e0;
+  --white:       #ffffff;
+  --phase-observe: #7b9cc4;
+  --phase-define:  #b88fc2;
+  --phase-ideate:  #8aab7e;
+  --phase-test:    #d4856a;
+  --phase-launch:  #9c8060;
+  --phase-reflect: #9c9890;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono:  'DM Mono', monospace;
+  --font-sans:  system-ui, -apple-system, sans-serif;
+  --r:  2px;
+  --r2: 4px;
+}
+
+[data-accent="forest"] {
+  --bg2:         #e4ede5;
+  --active-bg:   #dceadd;
+  --ink:         #2d4a35;
+  --accent:      #2d4a35;
+  --accent-text: #f7f5f0;
+}
+
+[data-accent="indigo"] {
+  --bg2:         #e4e6f0;
+  --active-bg:   #dce0ef;
+  --ink:         #2e3a6e;
+  --accent:      #2e3a6e;
+  --accent-text: #f7f5f0;
+}
+
+[data-accent="umber"] {
+  --bg2:         #ede5da;
+  --active-bg:   #e8ddd0;
+  --ink:         #5c3d1e;
+  --accent:      #5c3d1e;
+  --accent-text: #f7f5f0;
+}
+
+[data-accent="plum"] {
+  --bg2:         #ece2ee;
+  --active-bg:   #e6d8e8;
+  --ink:         #4a2d4e;
+  --accent:      #4a2d4e;
+  --accent-text: #f7f5f0;
+}
+
+---
+
+KEY BEHAVIORS
+
+1. All borders are 0.5px — never 1px or 2px except left-border accents (2px) and active tab indicator (1.5px)
+2. Accent color applies instantly on swatch click — no page reload needed
+3. data-accent attribute lives on document.documentElement
+4. Toast background uses var(--accent) so it always matches the current theme
+5. "Portfolio" button, "+ moment" button, and all primary actions use var(--accent) background
+6. Active tab indicator, active sidebar item, and selected phase pill all use var(--accent)
+7. River curve stroke and fill also use var(--accent)
+8. Phase dot colors on moments never change — they are always fixed phase colors
+9. Account settings drawer slides in from the right with CSS transform transition
+10. Settings drawer backdrop is semi-transparent and clicking it closes the drawer
+11. Export data creates a JSON blob download named "fieldnotes-export-[date].json"
+12. Reset to defaults: confirm → clear localStorage → reload page
+13. localStorage save debounced 300ms for main state. Accent saves immediately (no debounce).
+14. Voice calibration shows only if voiceProfile is null AND no projects in localStorage
+15. Profile name (from account settings) appears in "For myself" showcase if set
+
+---
+
+BUILD ORDER FOR CLAUDE CODE
+
+1. npm create vite@latest field-notes -- --template react
+2. Add Google Fonts to index.html (DM Serif Display + DM Mono)
+3. Write global.css with all CSS custom properties including all five accent variants
+4. Write data/phases.js and data/accents.js
+5. Write data/defaults.js with full default project and moment data
+6. Write hooks/useStorage.js, hooks/useDrag.js, hooks/useAccent.js
+7. Build RiverCanvas.jsx — the heart of the product
+8. Build EditPanel.jsx
+9. Build MomentCards.jsx and ArtifactStrip.jsx
+10. Build StoryValidator.jsx
+11. Build Sidebar.jsx with LearningLog section
+12. Build TopNav.jsx with gear icon
+13. Build AccountSettings.jsx slide-in drawer (all four sections)
+14. Build App.jsx wiring everything together
+15. Build VoiceCalibration.jsx onboarding screen
+16. Build ShowcaseSelf.jsx
+17. Build ShowcasePublic.jsx with depth switcher
+18. Build ContribView.jsx
+19. Build NewProjectModal.jsx and Toast.jsx
+20. Test accent switching — all five accents, confirm river, buttons, tabs, sidebar all update
+21. Test localStorage — refresh page, confirm accent, projects, and voice profile all survive
+22. Run npm run build — confirm clean production build
+23. Final visual pass — 0.5px borders everywhere, no shadows, sentence case, warm parchment base untouched across all accent variants
+
+Do not simplify. Do not use Tailwind or any UI component library. Build every component from scratch. The visual identity is the product. The accent system is a feature — make it feel delightful to switch, not like a settings checkbox.

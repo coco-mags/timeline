@@ -1,0 +1,114 @@
+/* ── Global reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base tokens (accent-independent) ── */
+:root,
+[data-accent="ink"] {
+  --bg:          #f7f5f0;
+  --bg2:         #f0ede6;
+  --active-bg:   #ede9e2;
+  --ink:         #2c2a26;
+  --accent:      #2c2a26;
+  --accent-text: #f7f5f0;
+  --ink2:        #5a5750;
+  --muted:       #9c9890;
+  --faint:       #b0ada6;
+  --line:        #d0cdc6;
+  --line2:       #e8e5e0;
+  --white:       #ffffff;
+
+  --phase-observe: #7b9cc4;
+  --phase-define:  #b88fc2;
+  --phase-ideate:  #8aab7e;
+  --phase-test:    #d4856a;
+  --phase-launch:  #9c8060;
+  --phase-reflect: #9c9890;
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono:  'DM Mono', monospace;
+  --font-sans:  system-ui, -apple-system, sans-serif;
+
+  --r:  2px;
+  --r2: 4px;
+}
+
+[data-accent="forest"] {
+  --bg2:         #e4ede5;
+  --active-bg:   #dceadd;
+  --ink:         #2d4a35;
+  --accent:      #2d4a35;
+  --accent-text: #f7f5f0;
+}
+
+[data-accent="indigo"] {
+  --bg2:         #e4e6f0;
+  --active-bg:   #dce0ef;
+  --ink:         #2e3a6e;
+  --accent:      #2e3a6e;
+  --accent-text: #f7f5f0;
+}
+
+[data-accent="umber"] {
+  --bg2:         #ede5da;
+  --active-bg:   #e8ddd0;
+  --ink:         #5c3d1e;
+  --accent:      #5c3d1e;
+  --accent-text: #f7f5f0;
+}
+
+[data-accent="plum"] {
+  --bg2:         #ece2ee;
+  --active-bg:   #e6d8e8;
+  --ink:         #4a2d4e;
+  --accent:      #4a2d4e;
+  --accent-text: #f7f5f0;
+}
+
+/* ── Base element styles ── */
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  background: transparent;
+  outline: none;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--faint);
+}
+
+textarea {
+  resize: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Utility: small label ── */
+.label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
