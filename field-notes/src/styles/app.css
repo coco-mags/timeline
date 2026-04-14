@@ -473,12 +473,14 @@
 .moment-card {
   flex-shrink: 0;
   width: 140px;
+  height: 80px;
   border: 0.5px solid var(--line);
   border-radius: var(--r);
   padding: 9px 10px;
   background: var(--white);
   cursor: pointer;
   transition: border-color 0.12s;
+  overflow: hidden;
 }
 .moment-card:hover { border-color: var(--ink); }
 .moment-card.active { border-color: var(--accent); }
@@ -576,7 +578,9 @@
   flex-wrap: wrap;
 }
 .phase-pill {
-  padding: 3px 8px;
+  padding: 3px 0;
+  width: 58px;
+  text-align: center;
   border-radius: 10px;
   font-size: 10px;
   border: 0.5px solid var(--line);
