@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useStorage } from './hooks/useStorage.js';
 import { useAccent } from './hooks/useAccent.js';
 import { makeDefaultProjects } from './data/defaults.js';
+import { X_START, X_END } from './hooks/useDrag.js';
 
 import TopNav from './components/TopNav.jsx';
 import Sidebar from './components/Sidebar.jsx';
@@ -95,6 +96,38 @@ export default function App() {
       const updatedProjs = s.projects.map(p =>
         p.id === s.activeProjId
           ? { ...p, moments: [...p.moments, newMom] }
+          : p
+      );
+      return { ...s, projects: updatedProjs, activeMomId: id, nextMomId: s.nextMomId + 1 };
+    });
+  }, [setState]);
+
+  const addMomentViaButton = useCallback(() => {
+    setState(s => {
+      const proj = s.projects.find(p => p.id === s.activeProjId);
+      if (!proj) return s;
+      const id = s.nextMomId;
+      const existing = proj.moments;
+      const total = existing.length + 1;
+      const span = X_END - X_START;
+
+      // Redistribute existing moments evenly (sorted by x to preserve order),
+      // then place new moment at the rightmost evenly-spaced position.
+      const sorted = [...existing].sort((a, b) => a.x - b.x);
+      const redistributed = sorted.map((m, i) => ({
+        ...m,
+        x: X_START + (span * (i + 1)) / (total + 1),
+      }));
+      const newMom = {
+        id,
+        x: X_START + (span * total) / (total + 1),
+        y: 100,
+        title: '', sub: '', detail: '', phase: 'observe', photos: [],
+      };
+
+      const updatedProjs = s.projects.map(p =>
+        p.id === s.activeProjId
+          ? { ...p, moments: [...redistributed, newMom] }
           : p
       );
       return { ...s, projects: updatedProjs, activeMomId: id, nextMomId: s.nextMomId + 1 };
@@ -375,7 +408,7 @@ export default function App() {
                 moments={moments}
                 activeMomId={state.activeMomId}
                 onSelect={selectMoment}
-                onAdd={() => addMomentAt(290, 100)}
+                onAdd={addMomentViaButton}
               />
 
               <EditPanel
