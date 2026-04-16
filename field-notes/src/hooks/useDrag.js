@@ -18,20 +18,25 @@ function getSvgPoint(svg, clientX, clientY) {
 export function useDrag({ onDragMove, onDragEnd }) {
   const draggingId = useRef(null);
   const svgRef = useRef(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
 
-  const startDrag = useCallback((e, momentId, svg) => {
+  const startDrag = useCallback((e, momentId, svg, dotX, dotY) => {
     e.stopPropagation();
     draggingId.current = momentId;
     svgRef.current = svg;
 
+    // Calculate where inside the dot the user grabbed it
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const grabPt = getSvgPoint(svg, clientX, clientY);
+    offsetRef.current = { x: grabPt.x - dotX, y: grabPt.y - dotY };
+
     const handleMove = (ev) => {
       if (draggingId.current === null) return;
-      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
-      const pt = getSvgPoint(svgRef.current, clientX, clientY);
-      const clampedY = Math.max(Y_MIN, Math.min(Y_MAX, pt.y));
-      const clampedX = Math.max(X_START, Math.min(X_END, pt.x));
-      onDragMove(draggingId.current, clampedX, clampedY);
+      const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      const pt = getSvgPoint(svgRef.current, cx, cy);
+      onDragMove(draggingId.current, pt.x - offsetRef.current.x, pt.y - offsetRef.current.y);
     };
 
     const handleUp = () => {

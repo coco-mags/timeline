@@ -19,7 +19,7 @@ function buildUXSignature(project, profile) {
   return `${name} documented ${project.moments.length} moment${project.moments.length !== 1 ? 's' : ''} across this work — from ${phases[0] || 'observation'} through ${phases[phases.length - 1] || 'reflection'}. The evidence is here. The insight is yours. This is what UX practice looks like when it happens in the real world.`;
 }
 
-export default function ShowcaseSelf({ project, profile, onClose }) {
+export default function ShowcaseSelf({ project, profile, onClose, storyTags = [], storyBlocks = [] }) {
   if (!project) return null;
 
   const photos = project.moments.flatMap(m => m.photos || []);
@@ -70,10 +70,48 @@ export default function ShowcaseSelf({ project, profile, onClose }) {
                 {m.sub && (
                   <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>{m.sub}</div>
                 )}
+                {(() => {
+                  const momentBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
+                  return momentBlocks.length > 0 ? (
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
+                      {momentBlocks.map(b => (
+                        <span key={b.id} style={{
+                          fontSize: '8px', padding: '1px 6px', borderRadius: '8px',
+                          backgroundColor: b.color, color: '#fff', fontWeight: 600,
+                          letterSpacing: '0.5px'
+                        }}>{b.label}</span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           ))}
         </div>
+
+        {(() => {
+          const taggedBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id));
+          return taggedBlocks.length > 0 ? (
+            <div style={{ marginTop: '24px' }}>
+              <div className="showcase-eyebrow" style={{ marginBottom: '12px' }}>The story</div>
+              {taggedBlocks.map(b => {
+                const tags = storyTags.filter(t => t.blockId === b.id);
+                return (
+                  <div key={b.id} style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '8px', backgroundColor: b.color, color: '#fff', fontWeight: 700, letterSpacing: '1px', flexShrink: 0 }}>{b.label}</span>
+                    </div>
+                    {tags.map(tag => (
+                      <div key={tag.momentId} style={{ paddingLeft: '12px', marginBottom: '6px' }}>
+                        {tag.reason && <div style={{ fontSize: '12px', color: 'var(--ink2)', fontStyle: 'italic', lineHeight: 1.5 }}>"{tag.reason}"</div>}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null;
+        })()}
 
         {project.learning && (
           <div

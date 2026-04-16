@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useStorage } from './hooks/useStorage.js';
 import { useAccent } from './hooks/useAccent.js';
 import { makeDefaultProjects } from './data/defaults.js';
@@ -17,6 +17,7 @@ import ShowcasePublic from './components/ShowcasePublic.jsx';
 import AccountSettings from './components/AccountSettings.jsx';
 import NewProjectModal from './components/NewProjectModal.jsx';
 import VoiceCalibration from './components/VoiceCalibration.jsx';
+import StoryBlocksPanel from './components/StoryBlocksPanel.jsx';
 import Toast from './components/Toast.jsx';
 
 const STORY_BLOCKS = [
@@ -40,8 +41,7 @@ function buildInitialState() {
     canvasView: 'river',
     showcase: null,
     settingsOpen: false,
-    storyBlocksOpen: false,
-    placedStoryBlocks: [],
+    storyTags: [],
     voiceEdits: {},
     toast: null,
   };
@@ -51,6 +51,41 @@ export default function App() {
   const [state, setState] = useStorage(buildInitialState());
   const { currentAccent, setAccent } = useAccent();
   const toastTimerRef = useRef(null);
+
+  // ── Panel resize ──────────────────────────────────────────────────
+  const [sidebarOpen,   setSidebarOpen]   = useState(true);
+  const [leftWidth,     setLeftWidth]     = useState(186);
+  const [rightWidth,    setRightWidth]    = useState(220);
+  const [learningHeight, setLearningHeight] = useState(60);
+  const [isResizing,    setIsResizing]    = useState(false);
+  const resizeState = useRef(null); // { side, startX/Y, startSize }
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!resizeState.current) return;
+      const { side, startX, startY, startSize } = resizeState.current;
+      if (side === 'left') {
+        setLeftWidth(Math.max(120, Math.min(400, startSize + (e.clientX - startX))));
+      } else if (side === 'right') {
+        setRightWidth(Math.max(160, Math.min(500, startSize - (e.clientX - startX))));
+      } else if (side === 'learning') {
+        // dragging up increases height
+        setLearningHeight(Math.max(40, Math.min(400, startSize - (e.clientY - startY))));
+      }
+    };
+    const onUp = () => {
+      if (resizeState.current) {
+        resizeState.current = null;
+        setIsResizing(false);
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
 
   // Show onboarding if voiceProfile is null AND projects match defaults (no user data yet)
   const showOnboarding = state.voiceProfile === null;
@@ -162,6 +197,27 @@ export default function App() {
 
   const selectMoment = useCallback((id) => {
     setState(s => ({ ...s, activeMomId: s.activeMomId === id ? null : id }));
+  }, [setState]);
+
+  const reorderMoments = useCallback((fromId, toId) => {
+    setState(s => {
+      const proj = s.projects.find(p => p.id === s.activeProjId);
+      if (!proj) return s;
+      const fromMom = proj.moments.find(m => m.id === fromId);
+      const toMom   = proj.moments.find(m => m.id === toId);
+      if (!fromMom || !toMom) return s;
+      const updatedMoments = proj.moments.map(m => {
+        if (m.id === fromId) return { ...m, x: toMom.x };
+        if (m.id === toId)   return { ...m, x: fromMom.x };
+        return m;
+      });
+      return {
+        ...s,
+        projects: s.projects.map(p =>
+          p.id === s.activeProjId ? { ...p, moments: updatedMoments } : p
+        ),
+      };
+    });
   }, [setState]);
 
   const cancelEdit = useCallback(() => {
@@ -282,21 +338,45 @@ export default function App() {
     }
   }, [state.activeMomId, state.activeProjId, state.projects, setState]);
 
-  // ── Story blocks ──────────────────────────────────────────────────
-  const toggleStoryBlock = useCallback((blockId) => {
+  // ── Story tags ────────────────────────────────────────────────────
+  const saveStoryTag = useCallback((blockId, momentId, reason) => {
+    setState(s => ({
+      ...s,
+      storyTags: [
+        ...(s.storyTags || []).filter(t => !(t.blockId === blockId && t.momentId === momentId)),
+        { blockId, momentId, reason },
+      ],
+    }));
+  }, [setState]);
+
+  const removeStoryTag = useCallback((blockId, momentId) => {
+    setState(s => ({
+      ...s,
+      storyTags: (s.storyTags || []).filter(t => !(t.blockId === blockId && t.momentId === momentId)),
+    }));
+  }, [setState]);
+
+  const dropMomentToBlock = useCallback((blockId, momentId) => {
     setState(s => {
-      const placed = s.placedStoryBlocks || [];
-      const has = placed.includes(blockId);
-      return { ...s, placedStoryBlocks: has ? placed.filter(b => b !== blockId) : [...placed, blockId] };
+      const already = (s.storyTags || []).some(t => t.blockId === blockId && t.momentId === momentId);
+      if (already) return s;
+      return {
+        ...s,
+        storyTags: [...(s.storyTags || []), { blockId, momentId, reason: '' }],
+      };
     });
   }, [setState]);
 
-  const storyCompleteness = (() => {
-    const placed = state.placedStoryBlocks || [];
-    const total = STORY_BLOCKS.reduce((sum, b) => sum + b.weight, 0);
-    const earned = STORY_BLOCKS.filter(b => placed.includes(b.id)).reduce((sum, b) => sum + b.weight, 0);
-    return Math.round((earned / total) * 100);
-  })();
+  // ── Inline learning save ──────────────────────────────────────────
+  const saveProjectLearningInline = useCallback((text) => {
+    setState(s => ({
+      ...s,
+      projects: s.projects.map(p =>
+        p.id === s.activeProjId ? { ...p, learning: text } : p
+      ),
+    }));
+  }, [setState]);
+
 
   // ── Onboarding ────────────────────────────────────────────────────
   const handleOnboardingComplete = useCallback((voiceProfile) => {
@@ -319,22 +399,42 @@ export default function App() {
       <TopNav
         projects={state.projects}
         activeProjId={state.activeProjId}
-        onSelectProject={selectProject}
+        onSelectProject={(projId) => {
+          setState(s => ({ ...s, activeProjId: projId, activeMomId: null, canvasView: 'river' }));
+        }}
         onNewProject={() => setNewProjModal(true)}
         onShowcaseSelf={() => setState(s => ({ ...s, showcase: 'self' }))}
         onShowcasePublic={() => setState(s => ({ ...s, showcase: 'public' }))}
         onOpenSettings={() => setState(s => ({ ...s, settingsOpen: true }))}
+        onToggleSidebar={() => setSidebarOpen(s => !s)}
+        onSelectMoment={(projId, momId) => {
+          setState(s => ({ ...s, activeProjId: projId, activeMomId: momId, canvasView: 'river' }));
+        }}
       />
 
-      <div className="app-body">
+      <div className={'app-body' + (isResizing ? ' resizing' : '')}>
         <Sidebar
+          style={sidebarOpen
+            ? { width: leftWidth, borderRight: '0.5px solid var(--line)' }
+            : { width: 0, overflow: 'hidden', borderRight: 'none' }
+          }
           projects={state.projects}
           activeProjId={state.activeProjId}
           onSelectProject={selectProject}
           onNewProject={() => setNewProjModal(true)}
-          onEditLearning={openEditLearning}
-          onAddLearning={openAddLearning}
+          onOpenSettings={() => setState(s => ({ ...s, settingsOpen: true }))}
         />
+
+        {sidebarOpen && (
+          <div
+            className="resize-handle"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              resizeState.current = { side: 'left', startX: e.clientX, startSize: leftWidth };
+              setIsResizing(true);
+            }}
+          />
+        )}
 
         <main className="canvas-area">
           {/* Canvas bar */}
@@ -352,39 +452,17 @@ export default function App() {
               >
                 Contribution
               </button>
+              <button
+                className={state.canvasView === 'story' ? 'active' : ''}
+                onClick={() => setState(s => ({ ...s, canvasView: 'story' }))}
+              >
+                Story blocks{(state.storyTags || []).length > 0 ? ` · ${(state.storyTags || []).length}` : ''}
+              </button>
             </div>
-            <button
-              className={'canvas-bar-story-btn' + (state.storyBlocksOpen ? ' active' : '')}
-              onClick={() => setState(s => ({ ...s, storyBlocksOpen: !s.storyBlocksOpen }))}
-            >
-              Story blocks {storyCompleteness > 0 ? `· ${storyCompleteness}%` : ''}
-            </button>
             <div className="canvas-bar-spacer" />
             {state.canvasView === 'river' && (
               <span className="canvas-bar-hint">Click to place · Drag to adjust</span>
             )}
-          </div>
-
-          {/* Story blocks panel */}
-          <div
-            className="story-blocks-panel"
-            style={{ maxHeight: state.storyBlocksOpen ? '80px' : '0' }}
-          >
-            <div className="story-progress-bar">
-              <div className="story-progress-fill" style={{ width: `${storyCompleteness}%` }} />
-            </div>
-            <div className="story-blocks-inner">
-              {STORY_BLOCKS.map(b => (
-                <button
-                  key={b.id}
-                  className={'story-block-btn' + ((state.placedStoryBlocks || []).includes(b.id) ? ' placed' : '')}
-                  style={{ backgroundColor: b.color }}
-                  onClick={() => toggleStoryBlock(b.id)}
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {state.canvasView === 'river' ? (
@@ -395,30 +473,43 @@ export default function App() {
                 onCanvasClick={addMomentAt}
                 onDotClick={selectMoment}
                 onDragMove={dragMoveMoment}
+                storyTags={state.storyTags || []}
+                storyBlocks={STORY_BLOCKS}
               />
 
-              <StoryValidator moments={moments} />
+              <ArtifactStrip moments={moments} />
 
-              <ArtifactStrip
-                moments={moments}
-                onAddPhoto={handleStripAddPhoto}
-              />
-
-              <MomentCards
-                moments={moments}
-                activeMomId={state.activeMomId}
-                onSelect={selectMoment}
-                onAdd={addMomentViaButton}
-              />
-
-              <EditPanel
-                moment={activeMoment}
-                onSave={saveMoment}
-                onDelete={deleteMoment}
-                onCancel={cancelEdit}
-                onLiveUpdate={liveUpdateMoment}
-              />
+              {/* Learning log for current project */}
+              <div className="project-learning" style={{ height: learningHeight }}>
+                <div
+                  className="resize-handle-h"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    resizeState.current = { side: 'learning', startY: e.clientY, startSize: learningHeight };
+                    setIsResizing(true);
+                  }}
+                />
+                <div className="project-learning-body">
+                  <textarea
+                    key={activeProject?.id}
+                    className="project-learning-input"
+                    defaultValue={activeProject?.learning || ''}
+                    placeholder="What did this project teach you? Write in your own voice."
+                    onBlur={(e) => saveProjectLearningInline(e.target.value.trim())}
+                  />
+                </div>
+              </div>
             </>
+
+          ) : state.canvasView === 'story' ? (
+            <StoryBlocksPanel
+              blocks={STORY_BLOCKS}
+              storyTags={state.storyTags || []}
+              moments={moments}
+              onDropMoment={dropMomentToBlock}
+              onSaveReason={saveStoryTag}
+              onRemoveTag={removeStoryTag}
+            />
           ) : (
             <ContribView
               moments={moments}
@@ -426,7 +517,41 @@ export default function App() {
             />
           )}
         </main>
+
+        <div
+          className="resize-handle"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            resizeState.current = { side: 'right', startX: e.clientX, startSize: rightWidth };
+            setIsResizing(true);
+          }}
+        />
+
+        {/* Right panel — moments list + edit */}
+        <div className="moments-panel" style={{ width: rightWidth, borderLeft: '0.5px solid var(--line)' }}>
+          <div className="moments-panel-header">
+            <span className="moments-panel-label">Moments</span>
+          </div>
+          <MomentCards
+            moments={moments}
+            activeMomId={state.activeMomId}
+            onSelect={selectMoment}
+            onAdd={addMomentViaButton}
+            onDelete={deleteMoment}
+            onReorder={reorderMoments}
+            storyTags={state.storyTags || []}
+            storyBlocks={STORY_BLOCKS}
+          />
+          <EditPanel
+            moment={activeMoment}
+            onSave={saveMoment}
+            onDelete={deleteMoment}
+            onCancel={cancelEdit}
+            onLiveUpdate={liveUpdateMoment}
+          />
+        </div>
       </div>
+
 
       {/* Showcases */}
       {state.showcase === 'self' && (
@@ -434,6 +559,8 @@ export default function App() {
           project={activeProject}
           profile={state.profile}
           onClose={() => setState(s => ({ ...s, showcase: null }))}
+          storyTags={state.storyTags || []}
+          storyBlocks={STORY_BLOCKS}
         />
       )}
       {state.showcase === 'public' && (
@@ -445,6 +572,8 @@ export default function App() {
             voiceEdits: { ...s.voiceEdits, [key]: val },
           }))}
           onClose={() => setState(s => ({ ...s, showcase: null }))}
+          storyTags={state.storyTags || []}
+          storyBlocks={STORY_BLOCKS}
         />
       )}
 

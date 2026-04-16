@@ -1,4 +1,5 @@
 import React from 'react';
+import SearchPanel from './SearchPanel.jsx';
 
 export default function TopNav({
   projects,
@@ -8,29 +9,23 @@ export default function TopNav({
   onShowcaseSelf,
   onShowcasePublic,
   onOpenSettings,
+  onToggleSidebar,
+  onSelectMoment,
 }) {
   return (
     <nav className="top-nav">
-      <div className="nav-logo">field notes</div>
-
-      <div className="nav-tabs">
-        {projects.map(p => (
-          <div
-            key={p.id}
-            className={'nav-tab' + (p.id === activeProjId ? ' active' : '')}
-            onClick={() => onSelectProject(p.id)}
-          >
-            <div className="nav-tab-dot" style={{ backgroundColor: p.color }} />
-            {p.name}
-          </div>
-        ))}
-        <button className="nav-add-proj" onClick={onNewProject} title="New project">+</button>
-      </div>
+      <button className="nav-sidebar-toggle" onClick={onToggleSidebar} title="Toggle sidebar">
+        <span className="nav-sidebar-toggle-icon">☰</span>
+      </button>
+      <SearchPanel
+        projects={projects}
+        onSelectMoment={onSelectMoment}
+        onSelectProject={onSelectProject}
+      />
 
       <div className="nav-right">
         <button className="btn-ghost" onClick={onShowcaseSelf}>For myself</button>
         <button className="btn-filled" onClick={onShowcasePublic}>Portfolio</button>
-        <button className="nav-gear" onClick={onOpenSettings} title="Settings">⚙</button>
       </div>
     </nav>
   );

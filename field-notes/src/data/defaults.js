@@ -15,6 +15,7 @@ export function makeDefaultProjects() {
           detail: 'Watched 12 transactions during lunch rush. Customers visibly frustrated by the card reader orientation — it faced the wrong way. Cashiers had developed a workaround of spinning it, but this added 4–6 seconds per transaction. Decided NOT to address receipt printer lag first, even though it was louder — the spinner was the actual blocker.',
           phase: 'observe',
           photos: [],
+          steps: [],
         },
         {
           id: 102,
@@ -25,6 +26,7 @@ export function makeDefaultProjects() {
           detail: 'The problem wasn\'t the hardware — it was who owns the moment of payment initiation. No one had decided whether the cashier or the customer was responsible for "starting" the transaction. This ambiguity caused the spin-the-reader workaround.',
           phase: 'define',
           photos: [],
+          steps: [],
         },
         {
           id: 103,
@@ -35,6 +37,7 @@ export function makeDefaultProjects() {
           detail: 'Proposed three solutions: (1) reposition reader hardware, (2) add a small sticker arrow, (3) retrain cashiers. Decided NOT to retrain — behavioral change is slow. Chose sticker arrow as first test. Cost: zero. Reversible in 60 seconds.',
           phase: 'ideate',
           photos: [],
+          steps: [],
         },
         {
           id: 104,
@@ -45,6 +48,7 @@ export function makeDefaultProjects() {
           detail: 'Added directional arrow sticker. Measured transaction time informally by counting seconds. Spinner workaround disappeared within one shift. Customers self-corrected without instruction. Asked two cashiers if they noticed — both said "actually yeah, today felt easier."',
           phase: 'test',
           photos: [],
+          steps: [],
         },
         {
           id: 105,
@@ -55,6 +59,7 @@ export function makeDefaultProjects() {
           detail: 'Sticker became standard on all four registers. Manager asked why no one had done this before. Documented the decision trail so the next person wouldn\'t have to rediscover it. Not done: formal timing study — would have been overkill for a 3-register café.',
           phase: 'launch',
           photos: [],
+          steps: [],
         },
       ],
     },
@@ -73,6 +78,7 @@ export function makeDefaultProjects() {
           detail: 'The queue split into two lines at a fork point that had no signage. Customers guessed wrong about 40% of the time and had to backtrack. No one complained directly — they just quietly looked confused. Decided NOT to add rope barriers — they signal crowd control, not hospitality.',
           phase: 'observe',
           photos: [],
+          steps: [],
         },
         {
           id: 202,
@@ -83,6 +89,7 @@ export function makeDefaultProjects() {
           detail: 'Used colored floor tape to define a clear single path to the fork. Ran for one week. Observed that backtracking dropped dramatically. Three customers pointed at the floor and followed it like a map — which is exactly what we wanted.',
           phase: 'test',
           photos: [],
+          steps: [],
         },
         {
           id: 203,
@@ -93,6 +100,7 @@ export function makeDefaultProjects() {
           detail: 'Replaced tape with a hanging sign and subtle floor graphic. Manager approved the spend ($40) after seeing the informal test results. Documented that the fork itself — not the length of the queue — was the friction source.',
           phase: 'launch',
           photos: [],
+          steps: [],
         },
       ],
     },
@@ -111,6 +119,7 @@ export function makeDefaultProjects() {
           detail: 'Watched a new barista spend 90 seconds scanning a laminated recipe card for a single drink modification. The card had 14 steps for a 4-step process. Decided NOT to digitize first — the format was the problem, not the medium.',
           phase: 'observe',
           photos: [],
+          steps: [],
         },
         {
           id: 302,
@@ -121,6 +130,7 @@ export function makeDefaultProjects() {
           detail: 'Redesigned two cards using larger type for the key action, smaller type for the context. Added a "quick version" at the top for experienced staff. New hire used the redesigned card in 22 seconds. Experienced barista skipped to quick version without prompting.',
           phase: 'ideate',
           photos: [],
+          steps: [],
         },
       ],
     },

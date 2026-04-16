@@ -22,10 +22,25 @@ function GlanceContent({ project }) {
   );
 }
 
-function ReadContent({ project }) {
+function ReadContent({ project, storyTags = [], storyBlocks = [] }) {
   const observed = project.moments.filter(m => m.phase === 'observe');
   const tested = project.moments.filter(m => m.phase === 'test');
   const launched = project.moments.filter(m => m.phase === 'launch');
+
+  const renderMomentBadges = (m) => {
+    const momentBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
+    return momentBlocks.length > 0 ? (
+      <span style={{ display: 'inline-flex', gap: '4px', marginLeft: '6px', verticalAlign: 'middle', flexWrap: 'wrap' }}>
+        {momentBlocks.map(b => (
+          <span key={b.id} style={{
+            fontSize: '8px', padding: '1px 6px', borderRadius: '8px',
+            backgroundColor: b.color, color: '#fff', fontWeight: 600,
+            letterSpacing: '0.5px'
+          }}>{b.label}</span>
+        ))}
+      </span>
+    ) : null;
+  };
 
   return (
     <div className="showcase-depth-content">
@@ -33,7 +48,7 @@ function ReadContent({ project }) {
         <>
           <h4>What was observed</h4>
           {observed.map(m => (
-            <p key={m.id}><strong>{m.title}:</strong> {m.sub}</p>
+            <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderMomentBadges(m)}</p>
           ))}
         </>
       )}
@@ -41,7 +56,7 @@ function ReadContent({ project }) {
         <>
           <h4>What was tested</h4>
           {tested.map(m => (
-            <p key={m.id}><strong>{m.title}:</strong> {m.sub}</p>
+            <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderMomentBadges(m)}</p>
           ))}
         </>
       )}
@@ -49,7 +64,7 @@ function ReadContent({ project }) {
         <>
           <h4>What shipped</h4>
           {launched.map(m => (
-            <p key={m.id}><strong>{m.title}:</strong> {m.sub}</p>
+            <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderMomentBadges(m)}</p>
           ))}
         </>
       )}
@@ -63,25 +78,35 @@ function ReadContent({ project }) {
   );
 }
 
-function DeepContent({ project }) {
+function DeepContent({ project, storyTags = [], storyBlocks = [] }) {
   return (
     <div className="showcase-depth-content">
-      {project.moments.map(m => (
-        <div key={m.id} style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: phaseColor(m.phase), flexShrink: 0 }} />
-            <strong style={{ fontSize: '12px', color: 'var(--ink)' }}>{m.title}</strong>
-            <span style={{ fontSize: '9px', color: phaseColor(m.phase), textTransform: 'uppercase', letterSpacing: '1.5px' }}>{m.phase}</span>
+      {project.moments.map(m => {
+        const momentBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
+        return (
+          <div key={m.id} style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: phaseColor(m.phase), flexShrink: 0 }} />
+              <strong style={{ fontSize: '12px', color: 'var(--ink)' }}>{m.title}</strong>
+              <span style={{ fontSize: '9px', color: phaseColor(m.phase), textTransform: 'uppercase', letterSpacing: '1.5px' }}>{m.phase}</span>
+              {momentBlocks.map(b => (
+                <span key={b.id} style={{
+                  fontSize: '8px', padding: '1px 6px', borderRadius: '8px',
+                  backgroundColor: b.color, color: '#fff', fontWeight: 600,
+                  letterSpacing: '0.5px'
+                }}>{b.label}</span>
+              ))}
+            </div>
+            {m.sub && <p style={{ color: 'var(--muted)', fontSize: '11px', marginBottom: '6px' }}>{m.sub}</p>}
+            {m.detail && <p>{m.detail}</p>}
           </div>
-          {m.sub && <p style={{ color: 'var(--muted)', fontSize: '11px', marginBottom: '6px' }}>{m.sub}</p>}
-          {m.detail && <p>{m.detail}</p>}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEdit }) {
+export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEdit, storyTags = [], storyBlocks = [] }) {
   const [depth, setDepth] = useState('Glance');
   const phases = [...new Set(project.moments.map(m => m.phase))];
 
@@ -135,8 +160,8 @@ export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEd
           </div>
 
           {depth === 'Glance' && <GlanceContent project={project} />}
-          {depth === 'Read'   && <ReadContent project={project} />}
-          {depth === 'Deep'   && <DeepContent project={project} />}
+          {depth === 'Read'   && <ReadContent project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
+          {depth === 'Deep'   && <DeepContent project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
         </div>
 
         {project.learning && (
@@ -148,6 +173,24 @@ export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEd
             <div className="showcase-learning-text">"{project.learning}"</div>
           </div>
         )}
+
+        {(() => {
+          const taggedBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id));
+          return taggedBlocks.length > 0 ? (
+            <div style={{ marginTop: '24px' }}>
+              <div className="showcase-eyebrow" style={{ marginBottom: '12px' }}>The story</div>
+              {taggedBlocks.map(b => {
+                const tag = storyTags.find(t => t.blockId === b.id);
+                return (
+                  <div key={b.id} style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '8px', backgroundColor: b.color, color: '#fff', fontWeight: 700, letterSpacing: '1px', flexShrink: 0, marginTop: '2px' }}>{b.label}</span>
+                    {tag.reason && <span style={{ fontSize: '12px', color: 'var(--ink2)', fontStyle: 'italic', lineHeight: 1.5 }}>"{tag.reason}"</span>}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null;
+        })()}
 
         <div className="voice-indicator">
           <span>{voicePct}% your voice</span>

@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PHASES, phaseColor } from '../data/phases.js';
 
 export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUpdate }) {
-  const [title, setTitle] = useState('');
-  const [sub, setSub] = useState('');
-  const [detail, setDetail] = useState('');
-  const [phase, setPhase] = useState('observe');
-  const [photos, setPhotos] = useState([]);
+  const [title,        setTitle]        = useState('');
+  const [sub,          setSub]          = useState('');
+  const [detail,       setDetail]       = useState('');
+  const [phase,        setPhase]        = useState('observe');
+  const [photos,       setPhotos]       = useState([]);
+  const [steps,        setSteps]        = useState([]);
+  const [photoDragIdx, setPhotoDragIdx] = useState(null);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -16,119 +18,176 @@ export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUp
       setDetail(moment.detail || '');
       setPhase(moment.phase || 'observe');
       setPhotos(moment.photos || []);
+      setSteps(moment.steps || []);
     }
   }, [moment]);
 
-  const handleTitle = (v) => {
-    setTitle(v);
-    onLiveUpdate && onLiveUpdate({ title: v });
-  };
+  const handleTitle = v => { setTitle(v); onLiveUpdate?.({ title: v }); };
+  const handleSub   = v => { setSub(v);   onLiveUpdate?.({ sub: v }); };
 
-  const handleSub = (v) => {
-    setSub(v);
-    onLiveUpdate && onLiveUpdate({ sub: v });
-  };
-
-  const handleSave = () => {
-    onSave({ ...moment, title, sub, detail, phase, photos });
-  };
+  const handleSave = () => onSave({ ...moment, title, sub, detail, phase, photos, steps });
 
   const handlePhotoAdd = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setPhotos(prev => [...prev, ev.target.result]);
-    };
+    reader.onload = ev => setPhotos(prev => [...prev, ev.target.result]);
     reader.readAsDataURL(file);
     e.target.value = '';
   };
 
-  const handlePhotoRemove = (idx) => {
-    setPhotos(prev => prev.filter((_, i) => i !== idx));
-  };
+  const activePhase = PHASES.find(p => p.id === phase);
+  const doneCount   = steps.filter(s => s.done).length;
 
   if (!moment) return null;
 
   return (
-    <div className="edit-panel" style={{ maxHeight: '280px' }}>
-      <div className="edit-panel-inner">
-        {/* Row 1: title + sub + phase pills */}
-        <div className="edit-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-          <input
-            className="edit-input edit-input-title"
-            value={title}
-            onChange={e => handleTitle(e.target.value)}
-            placeholder="Moment title"
+    <div className="edit-panel">
+      {/* Phase picker — dot row */}
+      <div className="edit-phase-strip">
+        {PHASES.map(p => (
+          <button
+            key={p.id}
+            className={'edit-phase-dot-btn' + (phase === p.id ? ' active' : '')}
+            style={{ backgroundColor: p.color, color: p.color }}
+            title={p.label}
+            onClick={() => setPhase(p.id)}
           />
-          <input
-            className="edit-input edit-input-sub"
-            value={sub}
-            onChange={e => handleSub(e.target.value)}
-            placeholder="Short note"
-          />
-          <div className="phase-pills">
-            {PHASES.map(p => (
-              <button
-                key={p.id}
-                className={'phase-pill' + (phase === p.id ? ' selected' : '')}
-                style={phase === p.id ? { backgroundColor: p.color } : {}}
-                onClick={() => setPhase(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        ))}
+        <span className="edit-phase-active-label" style={{ color: phaseColor(phase) }}>
+          {activePhase?.label}
+        </span>
+      </div>
 
-        {/* Row 2: detail + photos */}
-        <div className="edit-row" style={{ alignItems: 'flex-start' }}>
-          <textarea
-            className="edit-detail"
-            value={detail}
-            onChange={e => setDetail(e.target.value)}
-            placeholder="What happened? Include decisions made and what you decided NOT to do."
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div className="edit-photos-row">
-              {photos.map((src, i) => (
+      <div className="edit-panel-inner">
+        {/* Title */}
+        <input
+          className="edit-title-input"
+          value={title}
+          onChange={e => handleTitle(e.target.value)}
+          placeholder="What happened? Name this moment…"
+          autoFocus
+        />
+
+        {/* Subtitle */}
+        <input
+          className="edit-sub-input"
+          value={sub}
+          onChange={e => handleSub(e.target.value)}
+          placeholder="One-line summary or impact"
+        />
+
+        {/* Detail */}
+        <textarea
+          className="edit-detail-input"
+          value={detail}
+          onChange={e => setDetail(e.target.value)}
+          placeholder="Describe what happened. What did you decide? What did you decide NOT to do? What surprised you?"
+        />
+
+        {/* Photos */}
+        <div className="edit-photos-section">
+          <div className="edit-section-label">Photos</div>
+          <div className="edit-photos-row">
+            {photos.map((src, i) => (
+              <div
+                key={i}
+                draggable
+                onDragStart={() => setPhotoDragIdx(i)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => {
+                  e.preventDefault();
+                  if (photoDragIdx === null || photoDragIdx === i) return;
+                  const next = [...photos];
+                  const [moved] = next.splice(photoDragIdx, 1);
+                  next.splice(i, 0, moved);
+                  setPhotos(next);
+                  setPhotoDragIdx(null);
+                }}
+                onDragEnd={() => setPhotoDragIdx(null)}
+                className={'edit-photo-thumb-wrap' + (photoDragIdx === i ? ' dragging' : '')}
+              >
                 <img
-                  key={i}
                   src={src}
                   className="edit-photo-thumb"
                   alt=""
-                  onClick={() => handlePhotoRemove(i)}
-                  title="Click to remove"
+                  onClick={() => setPhotos(prev => prev.filter((_, j) => j !== i))}
+                  title="Click to remove · drag to reorder"
                 />
-              ))}
+              </div>
+            ))}
+            <button className="edit-photo-add" onClick={() => fileRef.current?.click()} title="Add photo">
+              <span>+</span>
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoAdd} />
+          </div>
+          {photos.length > 0 && (
+            <div className="edit-photos-hint">Click to remove · drag to reorder</div>
+          )}
+        </div>
+
+        {/* Design process steps */}
+        <div className="edit-steps-section">
+          <div className="edit-steps-header">
+            <span className="edit-section-label">
+              Design process
+              {steps.length > 0 && (
+                <span className="edit-steps-progress">
+                  {doneCount}/{steps.length}
+                </span>
+              )}
+            </span>
+            <button
+              className="edit-steps-add-btn"
+              onClick={() => setSteps(prev => [...prev, { id: Date.now(), text: '', done: false }])}
+            >
+              + add step
+            </button>
+          </div>
+
+          {steps.length === 0 && (
+            <div className="edit-steps-empty">
+              Document the design steps for this moment — what you tried, what you skipped, what you learned.
+            </div>
+          )}
+
+          {steps.map((step, i) => (
+            <div key={step.id} className={'edit-step-row' + (step.done ? ' done' : '')}>
               <button
-                className="edit-photo-add"
-                onClick={() => fileRef.current?.click()}
-                title="Add photo"
+                className={'edit-step-checkbox' + (step.done ? ' checked' : '')}
+                style={step.done ? { borderColor: phaseColor(phase), backgroundColor: phaseColor(phase) } : {}}
+                onClick={() => setSteps(prev => prev.map((s, j) => j === i ? { ...s, done: !s.done } : s))}
               >
-                +
+                {step.done && '✓'}
               </button>
               <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handlePhotoAdd}
+                className="edit-step-text"
+                value={step.text}
+                onChange={e => setSteps(prev => prev.map((s, j) => j === i ? { ...s, text: e.target.value } : s))}
+                placeholder={`Step ${i + 1}…`}
+              />
+              <button
+                className="edit-step-remove"
+                onClick={() => setSteps(prev => prev.filter((_, j) => j !== i))}
+              >×</button>
+            </div>
+          ))}
+
+          {steps.length > 0 && (
+            <div className="edit-steps-bar">
+              <div
+                className="edit-steps-bar-fill"
+                style={{ width: `${(doneCount / steps.length) * 100}%`, backgroundColor: phaseColor(phase) }}
               />
             </div>
-            {photos.length > 0 && (
-              <span style={{ fontSize: '9px', color: 'var(--muted)' }}>
-                {photos.length} photo{photos.length > 1 ? 's' : ''} · click to remove
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="edit-actions">
-          <button className="edit-save" onClick={handleSave}>Save</button>
-          <button className="edit-delete" onClick={() => onDelete(moment.id)}>Delete</button>
+          <button className="edit-save" onClick={handleSave}>Save moment</button>
           <button className="edit-cancel" onClick={onCancel}>Cancel</button>
+          <button className="edit-delete" onClick={() => onDelete(moment.id)}>Delete</button>
         </div>
       </div>
     </div>
