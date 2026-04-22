@@ -439,30 +439,61 @@ export default function App() {
         <main className="canvas-area">
           {/* Canvas bar */}
           <div className="canvas-bar">
-            <div className="canvas-bar-toggle">
+            <div className="canvas-view-tabs">
+
+              {/* River tab */}
               <button
-                className={state.canvasView === 'river' ? 'active' : ''}
+                className={'canvas-tab' + (state.canvasView === 'river' ? ' active' : '')}
                 onClick={() => setState(s => ({ ...s, canvasView: 'river' }))}
               >
-                River
+                <svg className="canvas-tab-icon" viewBox="0 0 16 16" fill="none">
+                  <path d="M1 9 C3.5 4 5.5 4 8 8 C10.5 12 12.5 12 15 7"
+                    stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="1" cy="9" r="1.2" fill="currentColor"/>
+                  <circle cx="8" cy="8" r="1.2" fill="currentColor"/>
+                  <circle cx="15" cy="7" r="1.2" fill="currentColor"/>
+                </svg>
+                <span className="canvas-tab-label">River</span>
               </button>
+
+              {/* Insights tab */}
               <button
-                className={state.canvasView === 'contrib' ? 'active' : ''}
+                className={'canvas-tab' + (state.canvasView === 'contrib' ? ' active' : '')}
                 onClick={() => setState(s => ({ ...s, canvasView: 'contrib' }))}
               >
-                Contribution
+                <svg className="canvas-tab-icon" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="1.5" y="9" width="3" height="6" rx="0.75"/>
+                  <rect x="6.5" y="5.5" width="3" height="9.5" rx="0.75"/>
+                  <rect x="11.5" y="2" width="3" height="13" rx="0.75"/>
+                </svg>
+                <span className="canvas-tab-label">Insights</span>
               </button>
+
+              {/* Story tab */}
               <button
-                className={state.canvasView === 'story' ? 'active' : ''}
+                className={'canvas-tab' + (state.canvasView === 'story' ? ' active' : '')}
                 onClick={() => setState(s => ({ ...s, canvasView: 'story' }))}
               >
-                Story blocks{(state.storyTags || []).length > 0 ? ` · ${(state.storyTags || []).length}` : ''}
+                <svg className="canvas-tab-icon" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="1" y="1.5" width="14" height="4" rx="1"/>
+                  <rect x="1" y="7.5" width="10" height="3" rx="1"/>
+                  <rect x="1" y="12" width="7" height="2.5" rx="1"/>
+                </svg>
+                <span className="canvas-tab-label">Story</span>
+                {(state.storyTags || []).length > 0 && (
+                  <span className="canvas-tab-badge">{(state.storyTags || []).length}</span>
+                )}
               </button>
+
             </div>
+
             <div className="canvas-bar-spacer" />
-            {state.canvasView === 'river' && (
-              <span className="canvas-bar-hint">Click to place · Drag to adjust</span>
-            )}
+
+            <span className="canvas-bar-hint">
+              {state.canvasView === 'river'  && 'Click between dots to insert · Drag to adjust height'}
+              {state.canvasView === 'contrib' && 'Phase breakdown and moment stats for this project'}
+              {state.canvasView === 'story'   && 'Drag moment cards onto blocks to build your narrative'}
+            </span>
           </div>
 
           {state.canvasView === 'river' ? (
@@ -473,6 +504,7 @@ export default function App() {
                 onCanvasClick={addMomentAt}
                 onDotClick={selectMoment}
                 onDragMove={dragMoveMoment}
+                onAdd={addMomentViaButton}
                 storyTags={state.storyTags || []}
                 storyBlocks={STORY_BLOCKS}
               />

@@ -82,7 +82,7 @@ export default function MomentCards({ moments, activeMomId, onSelect, onAdd, onD
                   <span
                     key={b.id}
                     className="moment-card-story-tag"
-                    style={{ borderColor: b.color, color: b.color }}
+                    style={{ color: b.color }}
                   >
                     {b.label}
                   </span>

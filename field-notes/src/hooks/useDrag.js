@@ -8,10 +8,12 @@ const X_START = 50;
 const X_END = 540;
 
 function getSvgPoint(svg, clientX, clientY) {
+  // The SVG viewBox matches the container pixel dimensions exactly (dynW × dynH),
+  // so client offset IS the SVG coordinate — no scaling needed.
   const rect = svg.getBoundingClientRect();
   return {
-    x: (clientX - rect.left) * (SVG_W / rect.width),
-    y: (clientY - rect.top)  * (SVG_H / rect.height),
+    x: clientX - rect.left,
+    y: clientY - rect.top,
   };
 }
 

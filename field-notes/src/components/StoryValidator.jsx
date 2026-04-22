@@ -10,34 +10,15 @@ function getStatus(moments) {
 }
 
 const CHIP_STYLES = {
-  green: {
-    background: '#eaf3de',
-    borderColor: '#c0dd97',
-    color: '#27500a',
-  },
-  amber: {
-    background: '#faeeda',
-    borderColor: '#fac775',
-    color: '#633806',
-  },
-  red: {
-    background: '#fcebeb',
-    borderColor: '#f7c1c1',
-    color: '#a32d2d',
-  },
+  green: { background: '#eaf3de', color: '#2a5008' },
+  amber: { background: '#faeeda', color: '#5a3000' },
+  red:   { background: '#fcebeb', color: '#952020' },
 };
 
 function Chip({ label, ok, warn }) {
   const style = ok ? CHIP_STYLES.green : warn ? CHIP_STYLES.amber : CHIP_STYLES.red;
   return (
-    <div
-      className="validator-chip"
-      style={{
-        background: style.background,
-        borderColor: style.borderColor,
-        color: style.color,
-      }}
-    >
+    <div className="validator-chip" style={{ background: style.background, color: style.color }}>
       <span style={{ fontSize: '9px' }}>{ok ? '✓' : warn ? '~' : '○'}</span>
       <span>{label}</span>
     </div>

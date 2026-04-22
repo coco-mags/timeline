@@ -1,31 +1,76 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PHASES, phaseColor } from '../data/phases.js';
 
-export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUpdate }) {
-  const [title,        setTitle]        = useState('');
-  const [sub,          setSub]          = useState('');
-  const [detail,       setDetail]       = useState('');
-  const [phase,        setPhase]        = useState('observe');
-  const [photos,       setPhotos]       = useState([]);
-  const [steps,        setSteps]        = useState([]);
-  const [photoDragIdx, setPhotoDragIdx] = useState(null);
-  const fileRef = useRef(null);
+const TOOLBAR = [
+  { cmd: 'bold',          icon: 'B',   title: 'Bold',          style: { fontWeight: 700 } },
+  { cmd: 'italic',        icon: 'I',   title: 'Italic',        style: { fontStyle: 'italic' } },
+  { cmd: 'underline',     icon: 'U',   title: 'Underline',     style: { textDecoration: 'underline' } },
+  { cmd: 'strikeThrough', icon: 'S',   title: 'Strikethrough', style: { textDecoration: 'line-through' } },
+  { type: 'sep' },
+  { cmd: 'insertUnorderedList', icon: '≡', title: 'Bullet list' },
+  { cmd: 'insertOrderedList',   icon: '1.', title: 'Numbered list' },
+  { type: 'sep' },
+  { cmd: 'formatBlock', value: 'H3',   icon: 'H',   title: 'Heading' },
+  { cmd: 'formatBlock', value: 'P',    icon: '¶',   title: 'Paragraph' },
+  { type: 'sep' },
+  { cmd: 'removeFormat', icon: '✕',   title: 'Clear formatting' },
+];
 
+export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUpdate }) {
+  const [title,          setTitle]          = useState('');
+  const [sub,            setSub]            = useState('');
+  const [phase,          setPhase]          = useState('observe');
+  const [photos,         setPhotos]         = useState([]);
+  const [steps,          setSteps]          = useState([]);
+  const [whyItMatters,   setWhyItMatters]   = useState('');
+  const [photoDragIdx,   setPhotoDragIdx]   = useState(null);
+  const [activeFormats,  setActiveFormats]  = useState({});
+
+  const editorRef = useRef(null);
+  const fileRef   = useRef(null);
+  const momentId  = moment?.id;
+
+  // Load content when moment changes
   useEffect(() => {
     if (moment) {
       setTitle(moment.title || '');
       setSub(moment.sub || '');
-      setDetail(moment.detail || '');
       setPhase(moment.phase || 'observe');
       setPhotos(moment.photos || []);
       setSteps(moment.steps || []);
+      setWhyItMatters(moment.whyItMatters || '');
+      // Set editor HTML — only on moment switch to avoid caret jumping
+      if (editorRef.current) {
+        editorRef.current.innerHTML = moment.detail || '';
+      }
     }
-  }, [moment]);
+  }, [momentId]); // eslint-disable-line
 
   const handleTitle = v => { setTitle(v); onLiveUpdate?.({ title: v }); };
   const handleSub   = v => { setSub(v);   onLiveUpdate?.({ sub: v }); };
 
-  const handleSave = () => onSave({ ...moment, title, sub, detail, phase, photos, steps });
+  const getDetail = () => editorRef.current?.innerHTML || '';
+
+  const handleSave = () => {
+    onSave({ ...moment, title, sub, detail: getDetail(), phase, photos, steps, whyItMatters });
+  };
+
+  const execFormat = (cmd, value) => {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, value || null);
+    updateActiveFormats();
+  };
+
+  const updateActiveFormats = useCallback(() => {
+    setActiveFormats({
+      bold:          document.queryCommandState('bold'),
+      italic:        document.queryCommandState('italic'),
+      underline:     document.queryCommandState('underline'),
+      strikeThrough: document.queryCommandState('strikeThrough'),
+      insertUnorderedList: document.queryCommandState('insertUnorderedList'),
+      insertOrderedList:   document.queryCommandState('insertOrderedList'),
+    });
+  }, []);
 
   const handlePhotoAdd = (e) => {
     const file = e.target.files[0];
@@ -43,7 +88,7 @@ export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUp
 
   return (
     <div className="edit-panel">
-      {/* Phase picker — dot row */}
+      {/* Phase picker */}
       <div className="edit-phase-strip">
         {PHASES.map(p => (
           <button
@@ -77,13 +122,42 @@ export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUp
           placeholder="One-line summary or impact"
         />
 
-        {/* Detail */}
-        <textarea
-          className="edit-detail-input"
-          value={detail}
-          onChange={e => setDetail(e.target.value)}
-          placeholder="Describe what happened. What did you decide? What did you decide NOT to do? What surprised you?"
-        />
+        {/* Rich text editor */}
+        <div className="edit-rich-section">
+          {/* Toolbar */}
+          <div className="edit-rich-toolbar">
+            {TOOLBAR.map((btn, i) => {
+              if (btn.type === 'sep') return <span key={i} className="edit-toolbar-sep" />;
+              const isActive = activeFormats[btn.cmd];
+              return (
+                <button
+                  key={i}
+                  className={'edit-toolbar-btn' + (isActive ? ' active' : '')}
+                  title={btn.title}
+                  style={btn.style}
+                  onMouseDown={e => {
+                    e.preventDefault(); // prevent blur
+                    execFormat(btn.cmd, btn.value);
+                  }}
+                >
+                  {btn.icon}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Editable area */}
+          <div
+            ref={editorRef}
+            className="edit-rich-body"
+            contentEditable
+            suppressContentEditableWarning
+            onKeyUp={updateActiveFormats}
+            onMouseUp={updateActiveFormats}
+            onSelect={updateActiveFormats}
+            data-placeholder="Describe what happened. What did you decide? What did you decide NOT to do? What surprised you?"
+          />
+        </div>
 
         {/* Photos */}
         <div className="edit-photos-section">
@@ -126,61 +200,15 @@ export default function EditPanel({ moment, onSave, onDelete, onCancel, onLiveUp
           )}
         </div>
 
-        {/* Design process steps */}
-        <div className="edit-steps-section">
-          <div className="edit-steps-header">
-            <span className="edit-section-label">
-              Design process
-              {steps.length > 0 && (
-                <span className="edit-steps-progress">
-                  {doneCount}/{steps.length}
-                </span>
-              )}
-            </span>
-            <button
-              className="edit-steps-add-btn"
-              onClick={() => setSteps(prev => [...prev, { id: Date.now(), text: '', done: false }])}
-            >
-              + add step
-            </button>
-          </div>
-
-          {steps.length === 0 && (
-            <div className="edit-steps-empty">
-              Document the design steps for this moment — what you tried, what you skipped, what you learned.
-            </div>
-          )}
-
-          {steps.map((step, i) => (
-            <div key={step.id} className={'edit-step-row' + (step.done ? ' done' : '')}>
-              <button
-                className={'edit-step-checkbox' + (step.done ? ' checked' : '')}
-                style={step.done ? { borderColor: phaseColor(phase), backgroundColor: phaseColor(phase) } : {}}
-                onClick={() => setSteps(prev => prev.map((s, j) => j === i ? { ...s, done: !s.done } : s))}
-              >
-                {step.done && '✓'}
-              </button>
-              <input
-                className="edit-step-text"
-                value={step.text}
-                onChange={e => setSteps(prev => prev.map((s, j) => j === i ? { ...s, text: e.target.value } : s))}
-                placeholder={`Step ${i + 1}…`}
-              />
-              <button
-                className="edit-step-remove"
-                onClick={() => setSteps(prev => prev.filter((_, j) => j !== i))}
-              >×</button>
-            </div>
-          ))}
-
-          {steps.length > 0 && (
-            <div className="edit-steps-bar">
-              <div
-                className="edit-steps-bar-fill"
-                style={{ width: `${(doneCount / steps.length) * 100}%`, backgroundColor: phaseColor(phase) }}
-              />
-            </div>
-          )}
+        {/* Why it matters */}
+        <div className="edit-why-section">
+          <div className="edit-section-label">Why it matters</div>
+          <textarea
+            className="edit-why-input"
+            value={whyItMatters}
+            onChange={e => setWhyItMatters(e.target.value)}
+            placeholder="What's the impact? Why does this moment matter to the project or the people involved?"
+          />
         </div>
 
         {/* Actions */}

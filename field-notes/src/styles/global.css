@@ -1,78 +1,127 @@
-/* ── Global reset ── */
+/* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── Base tokens (accent-independent) ── */
-:root,
-[data-accent="ink"] {
-  --bg:          #f7f5f0;
-  --bg2:         #f0ede6;
-  --active-bg:   #ede9e2;
-  --ink:         #2c2a26;
-  --accent:      #2c2a26;
-  --accent-text: #f7f5f0;
-  --ink2:        #5a5750;
-  --muted:       #9c9890;
-  --faint:       #b0ada6;
-  --line:        #d0cdc6;
-  --line2:       #e8e5e0;
-  --white:       #ffffff;
+/* ── Design tokens ── */
+:root {
+  /* Primary (default: Warm Charcoal) */
+  --color-primary:      #2C2C2A;
+  --color-primary-10:   #F1EFE8;
+  --color-primary-30:   #888780;
+  --color-primary-text: #FFFFFF;
 
-  --phase-observe: #7b9cc4;
-  --phase-define:  #b88fc2;
-  --phase-ideate:  #8aab7e;
-  --phase-test:    #d4856a;
-  --phase-launch:  #9c8060;
-  --phase-reflect: #9c9890;
+  /* Surfaces */
+  --color-bg:           #FFFFFF;
+  --color-surface:      #F7F7F5;
+  --color-muted:        #F1EFE8;
 
-  --font-serif: 'DM Serif Display', Georgia, serif;
-  --font-mono:  'DM Mono', monospace;
-  --font-sans:  system-ui, -apple-system, sans-serif;
+  /* Text */
+  --color-text-1:       #2C2C2A;
+  --color-text-2:       #888780;
+  --color-text-3:       #B4B2A9;
 
-  --r:  2px;
-  --r2: 4px;
+  /* Border */
+  --color-border:       rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.14);
+
+  /* Semantic */
+  --color-warning:      #EF9F27;
+  --color-danger:       #E24B4A;
+  --color-success:      #639922;
+
+  /* Radius */
+  --radius-sm:          8px;
+  --radius-md:          12px;
+  --radius-lg:          16px;
+  --radius-pill:        999px;
+
+  /* Type scale — rem so they scale with the user's browser/system font size */
+  --font-sans:          'Geist', system-ui, sans-serif;
+  --font-mono:          'Geist Mono', monospace;
+  --text-display:       1.875rem;
+  --text-title:         1.375rem;
+  --text-heading:       1rem;
+  --text-label:         0.875rem;
+  --text-body:          0.875rem;
+  --text-caption:       0.75rem;
+
+  /* Phase colors */
+  --phase-observe:      #7b9cc4;
+  --phase-define:       #b88fc2;
+  --phase-ideate:       #8aab7e;
+  --phase-test:         #d4856a;
+  --phase-launch:       #9c8060;
+  --phase-reflect:      #9c9890;
+
+  /* ── Legacy aliases — app.css uses these, auto-updated ── */
+  --bg:           var(--color-bg);
+  --bg2:          var(--color-surface);
+  --active-bg:    var(--color-muted);
+  --white:        var(--color-bg);
+  --ink:          var(--color-text-1);
+  --ink2:         var(--color-text-2);
+  --muted:        var(--color-text-2);
+  --faint:        var(--color-text-3);
+  --line:         var(--color-border-strong);
+  --line2:        var(--color-border);
+  --accent:       var(--color-primary);
+  --accent-text:  var(--color-primary-text);
+  --font-serif:   var(--font-sans);
+  --r:            var(--radius-sm);
+  --r2:           var(--radius-md);
 }
 
-[data-accent="forest"] {
-  --bg2:         #e4ede5;
-  --active-bg:   #dceadd;
-  --ink:         #2d4a35;
-  --accent:      #2d4a35;
-  --accent-text: #f7f5f0;
+/* ── Themes ── */
+.theme-indigo {
+  --color-primary:      #3C3489;
+  --color-primary-10:   #EEEDFE;
+  --color-primary-30:   #AFA9EC;
+  --color-primary-text: #FFFFFF;
+  --color-muted:        #EEEDFE;
+  --active-bg:          #EEEDFE;
+  --accent:             #3C3489;
+}
+.theme-slate {
+  --color-primary:      #334155;
+  --color-primary-10:   #e2e8f0;
+  --color-primary-30:   #94a3b8;
+  --color-primary-text: #FFFFFF;
+  --color-muted:        #e2e8f0;
+  --active-bg:          #e2e8f0;
+  --accent:             #334155;
+}
+.theme-terracotta {
+  --color-primary:      #993C1D;
+  --color-primary-10:   #FAECE7;
+  --color-primary-30:   #F0997B;
+  --color-primary-text: #FFFFFF;
+  --color-muted:        #FAECE7;
+  --active-bg:          #FAECE7;
+  --accent:             #993C1D;
+}
+.theme-teal {
+  --color-primary:      #0F6E56;
+  --color-primary-10:   #E1F5EE;
+  --color-primary-30:   #5DCAA5;
+  --color-primary-text: #FFFFFF;
+  --color-muted:        #E1F5EE;
+  --active-bg:          #E1F5EE;
+  --accent:             #0F6E56;
 }
 
-[data-accent="indigo"] {
-  --bg2:         #e4e6f0;
-  --active-bg:   #dce0ef;
-  --ink:         #2e3a6e;
-  --accent:      #2e3a6e;
-  --accent-text: #f7f5f0;
-}
-
-[data-accent="umber"] {
-  --bg2:         #ede5da;
-  --active-bg:   #e8ddd0;
-  --ink:         #5c3d1e;
-  --accent:      #5c3d1e;
-  --accent-text: #f7f5f0;
-}
-
-[data-accent="plum"] {
-  --bg2:         #ece2ee;
-  --active-bg:   #e6d8e8;
-  --ink:         #4a2d4e;
-  --accent:      #4a2d4e;
-  --accent-text: #f7f5f0;
-}
-
-/* ── Base element styles ── */
-html, body, #root {
+/* ── Base styles ── */
+/* html has no font-size override — 1rem = whatever the user set in their browser */
+html {
   height: 100%;
-  background: var(--bg);
-  color: var(--ink);
+}
+body, #root {
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text-1);
   font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: var(--text-body);   /* 0.875rem — scales with user's browser setting */
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
@@ -82,33 +131,29 @@ button {
   border: none;
   background: none;
   color: inherit;
+  letter-spacing: inherit;
 }
 
-input, textarea {
+input, textarea, select {
   font-family: inherit;
   font-size: inherit;
-  color: var(--ink);
+  color: var(--color-text-1);
   background: transparent;
   outline: none;
 }
 
 input::placeholder, textarea::placeholder {
-  color: var(--faint);
+  color: var(--color-text-3);
 }
 
-textarea {
-  resize: none;
-}
+textarea { resize: none; }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
-/* ── Utility: small label ── */
+/* ── Utility ── */
 .label {
-  font-size: 8px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--faint);
+  font-size: var(--text-caption);
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  color: var(--color-text-3);
 }
