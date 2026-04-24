@@ -18,6 +18,10 @@ import AccountSettings from './components/AccountSettings.jsx';
 import NewProjectModal from './components/NewProjectModal.jsx';
 import VoiceCalibration from './components/VoiceCalibration.jsx';
 import StoryBlocksPanel from './components/StoryBlocksPanel.jsx';
+import StoryBlockBuilder from './components/StoryBlockBuilder.jsx';
+import { emptyStoryBuilder } from './hooks/useStoryBlocks.js';
+import StoryFlowBuilder from './components/StoryFlowBuilder.jsx';
+import { emptyStoryFlow } from './hooks/useStoryFlow.js';
 import Toast from './components/Toast.jsx';
 
 const STORY_BLOCKS = [
@@ -112,7 +116,7 @@ export default function App() {
       const id = s.nextProjId;
       return {
         ...s,
-        projects: [...s.projects, { id, name, color, moments: [], learning: '' }],
+        projects: [...s.projects, { id, name, color, moments: [], learning: '', storyBuilder: emptyStoryBuilder(), storyFlow: emptyStoryFlow() }],
         activeProjId: id,
         activeMomId: null,
         nextProjId: s.nextProjId + 1,
@@ -378,6 +382,24 @@ export default function App() {
   }, [setState]);
 
 
+  const updateStoryFlow = useCallback((sf) => {
+    setState(s => ({
+      ...s,
+      projects: s.projects.map(p =>
+        p.id === s.activeProjId ? { ...p, storyFlow: sf } : p
+      ),
+    }));
+  }, [setState]);
+
+  const updateStoryBuilder = useCallback((sb) => {
+    setState(s => ({
+      ...s,
+      projects: s.projects.map(p =>
+        p.id === s.activeProjId ? { ...p, storyBuilder: sb } : p
+      ),
+    }));
+  }, [setState]);
+
   // ── Onboarding ────────────────────────────────────────────────────
   const handleOnboardingComplete = useCallback((voiceProfile) => {
     setState(s => ({
@@ -492,7 +514,7 @@ export default function App() {
             <span className="canvas-bar-hint">
               {state.canvasView === 'river'  && 'Click between dots to insert · Drag to adjust height'}
               {state.canvasView === 'contrib' && 'Phase breakdown and moment stats for this project'}
-              {state.canvasView === 'story'   && 'Drag moment cards onto blocks to build your narrative'}
+              {state.canvasView === 'story'   && 'Write your case study · Pull from moments to quote your own work'}
             </span>
           </div>
 
@@ -534,13 +556,12 @@ export default function App() {
             </>
 
           ) : state.canvasView === 'story' ? (
-            <StoryBlocksPanel
-              blocks={STORY_BLOCKS}
-              storyTags={state.storyTags || []}
+            <StoryFlowBuilder
+              key={activeProject?.id}
+              project={activeProject}
               moments={moments}
-              onDropMoment={dropMomentToBlock}
-              onSaveReason={saveStoryTag}
-              onRemoveTag={removeStoryTag}
+              onUpdate={updateStoryFlow}
+              onGenerateShowcase={() => setState(s => ({ ...s, showcase: 'public' }))}
             />
           ) : (
             <ContribView
