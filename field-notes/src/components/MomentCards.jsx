@@ -9,8 +9,14 @@ export default function MomentCards({ moments, activeMomId, onSelect, onAdd, onD
 
   const handleDragStart = (e, id) => {
     setDragId(id);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = 'copyMove';
     e.dataTransfer.setData('momentId', id.toString());
+    // also expose content so external drop targets (story section nav, notes textarea) can use it
+    const m = moments.find(m => m.id === id);
+    if (m) {
+      const text = [m.title, m.sub, m.detail].filter(Boolean).join(' — ');
+      e.dataTransfer.setData('text/plain', text);
+    }
   };
 
   const handleDragEnter = (e, id) => {

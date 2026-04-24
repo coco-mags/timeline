@@ -1,3 +1,6 @@
+import { emptyStoryBuilder } from '../hooks/useStoryBlocks.js';
+import { emptyStoryFlow } from '../hooks/useStoryFlow.js';
+
 export function makeDefaultProjects() {
   return [
     {
@@ -5,6 +8,8 @@ export function makeDefaultProjects() {
       name: 'POS Workflow',
       color: '#2c2a26',
       learning: 'Friction in checkout often lives in the invisible handoff between cashier and customer — the moment no one owns.',
+      storyBuilder: emptyStoryBuilder(),
+      storyFlow: emptyStoryFlow(),
       moments: [
         {
           id: 101,
@@ -68,6 +73,8 @@ export function makeDefaultProjects() {
       name: 'Queue Fix',
       color: '#7b9cc4',
       learning: 'A queue is not just a line — it is a designed experience of waiting. When you shape the wait, you shape the memory of the service.',
+      storyBuilder: emptyStoryBuilder(),
+      storyFlow: emptyStoryFlow(),
       moments: [
         {
           id: 201,
@@ -109,6 +116,8 @@ export function makeDefaultProjects() {
       name: 'Drink Recipe UX',
       color: '#8aab7e',
       learning: 'Experts simplify what novices over-explain. The most useful documentation is written by the person who just learned it, not the one who mastered it.',
+      storyBuilder: emptyStoryBuilder(),
+      storyFlow: emptyStoryFlow(),
       moments: [
         {
           id: 301,

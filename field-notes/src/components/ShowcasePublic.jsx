@@ -1,20 +1,36 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { phaseColor, phaseLabel } from '../data/phases.js';
 import StoryValidator from './StoryValidator.jsx';
 
-const DEPTHS = ['Glance', 'Read', 'Deep'];
+const DEPTHS = ['Glance', 'Read', 'Deep', 'Story'];
+
+// ── Fallback content helpers ───────────────────────────────────────────────────
+
+function fallback(sfVal, momentVal) {
+  return (sfVal && sfVal.trim()) ? sfVal : (momentVal || '');
+}
+
+// ── Depth views ────────────────────────────────────────────────────────────────
 
 function GlanceContent({ project }) {
+  const sf     = project.storyFlow;
   const phases = [...new Set(project.moments.map(m => m.phase))];
+  const opening = fallback(sf?.human?.situation, null) ||
+    project.moments.find(m => m.phase === 'observe')?.detail || '';
+
   return (
     <div className="showcase-depth-content">
       <p>
-        A practitioner-led UX initiative documenting {project.moments.length} moments
-        across {phases.length} phase{phases.length !== 1 ? 's' : ''} of work —
-        from initial observation through implementation.
+        {opening || (
+          <>
+            A practitioner-led UX initiative documenting {project.moments.length} moment
+            {project.moments.length !== 1 ? 's' : ''} across {phases.length} phase
+            {phases.length !== 1 ? 's' : ''} of work — from initial observation through implementation.
+          </>
+        )}
       </p>
       {project.learning && (
-        <p style={{ fontStyle: 'italic', color: 'var(--muted)' }}>
+        <p style={{ fontStyle: 'italic', color: 'var(--muted)', marginTop: '12px' }}>
           Key learning: "{project.learning}"
         </p>
       )}
@@ -24,18 +40,17 @@ function GlanceContent({ project }) {
 
 function ReadContent({ project, storyTags = [], storyBlocks = [] }) {
   const observed = project.moments.filter(m => m.phase === 'observe');
-  const tested = project.moments.filter(m => m.phase === 'test');
+  const tested   = project.moments.filter(m => m.phase === 'test');
   const launched = project.moments.filter(m => m.phase === 'launch');
 
-  const renderMomentBadges = (m) => {
-    const momentBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
-    return momentBlocks.length > 0 ? (
-      <span style={{ display: 'inline-flex', gap: '4px', marginLeft: '6px', verticalAlign: 'middle', flexWrap: 'wrap' }}>
-        {momentBlocks.map(b => (
+  const renderBadges = (m) => {
+    const blocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
+    return blocks.length > 0 ? (
+      <span style={{ display: 'inline-flex', gap: '4px', marginLeft: '6px', verticalAlign: 'middle' }}>
+        {blocks.map(b => (
           <span key={b.id} style={{
             fontSize: '8px', padding: '1px 6px', borderRadius: '8px',
-            backgroundColor: b.color, color: '#fff', fontWeight: 600,
-            letterSpacing: '0.5px'
+            backgroundColor: b.color, color: '#fff', fontWeight: 600, letterSpacing: '0.5px',
           }}>{b.label}</span>
         ))}
       </span>
@@ -44,36 +59,10 @@ function ReadContent({ project, storyTags = [], storyBlocks = [] }) {
 
   return (
     <div className="showcase-depth-content">
-      {observed.length > 0 && (
-        <>
-          <h4>What was observed</h4>
-          {observed.map(m => (
-            <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderMomentBadges(m)}</p>
-          ))}
-        </>
-      )}
-      {tested.length > 0 && (
-        <>
-          <h4>What was tested</h4>
-          {tested.map(m => (
-            <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderMomentBadges(m)}</p>
-          ))}
-        </>
-      )}
-      {launched.length > 0 && (
-        <>
-          <h4>What shipped</h4>
-          {launched.map(m => (
-            <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderMomentBadges(m)}</p>
-          ))}
-        </>
-      )}
-      {project.learning && (
-        <>
-          <h4>What was learned</h4>
-          <p style={{ fontStyle: 'italic' }}>"{project.learning}"</p>
-        </>
-      )}
+      {observed.length > 0 && (<><h4>What was observed</h4>{observed.map(m => <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderBadges(m)}</p>)}</>)}
+      {tested.length   > 0 && (<><h4>What was tested</h4>{tested.map(m => <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderBadges(m)}</p>)}</>)}
+      {launched.length > 0 && (<><h4>What shipped</h4>{launched.map(m => <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderBadges(m)}</p>)}</>)}
+      {project.learning && (<><h4>What was learned</h4><p style={{ fontStyle: 'italic' }}>"{project.learning}"</p></>)}
     </div>
   );
 }
@@ -82,22 +71,18 @@ function DeepContent({ project, storyTags = [], storyBlocks = [] }) {
   return (
     <div className="showcase-depth-content">
       {project.moments.map(m => {
-        const momentBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
+        const blocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
         return (
           <div key={m.id} style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: phaseColor(m.phase), flexShrink: 0 }} />
               <strong style={{ fontSize: '12px', color: 'var(--ink)' }}>{m.title}</strong>
               <span style={{ fontSize: '9px', color: phaseColor(m.phase), textTransform: 'uppercase', letterSpacing: '1.5px' }}>{m.phase}</span>
-              {momentBlocks.map(b => (
-                <span key={b.id} style={{
-                  fontSize: '8px', padding: '1px 6px', borderRadius: '8px',
-                  backgroundColor: b.color, color: '#fff', fontWeight: 600,
-                  letterSpacing: '0.5px'
-                }}>{b.label}</span>
+              {blocks.map(b => (
+                <span key={b.id} style={{ fontSize: '8px', padding: '1px 6px', borderRadius: '8px', backgroundColor: b.color, color: '#fff', fontWeight: 600, letterSpacing: '0.5px' }}>{b.label}</span>
               ))}
             </div>
-            {m.sub && <p style={{ color: 'var(--muted)', fontSize: '11px', marginBottom: '6px' }}>{m.sub}</p>}
+            {m.sub    && <p style={{ color: 'var(--muted)', fontSize: '11px', marginBottom: '6px' }}>{m.sub}</p>}
             {m.detail && <p>{m.detail}</p>}
           </div>
         );
@@ -106,17 +91,130 @@ function DeepContent({ project, storyTags = [], storyBlocks = [] }) {
   );
 }
 
+function StoryContent({ project }) {
+  const sf = project.storyFlow || {};
+  const firstObserve = project.moments.find(m => m.phase === 'observe');
+  const lastLaunch   = project.moments.filter(m => m.phase === 'launch').at(-1);
+
+  const title       = fallback(sf.human?.title,        project.name);
+  const contextLine = fallback(sf.human?.contextLine,  '');
+  const situation   = fallback(sf.human?.situation,    firstObserve?.detail || '');
+  const probName    = fallback(sf.problem?.name,       '');
+  const evidence    = fallback(sf.problem?.evidence,   '');
+  const observation = fallback(sf.evidence?.observation, '');
+  const keyData     = fallback(sf.evidence?.keyData,   '');
+  const insight     = fallback(sf.turningPoint?.insight, '');
+  const contribution = fallback(sf.role?.contribution, '');
+  const successCrit  = fallback(sf.role?.successCriteria, '');
+  const decisions   = Array.isArray(sf.decisions) ? sf.decisions.filter(d => d.name?.trim()) : [];
+  const changed     = fallback(sf.outcome?.changed,    lastLaunch?.detail || '');
+  const honest      = fallback(sf.outcome?.honest,     '');
+  const learning    = fallback(sf.learning?.text,      project.learning || '');
+
+  return (
+    <div className="showcase-story-content">
+
+      {/* 1. Title */}
+      <h1 className="sc-story-title">{title}</h1>
+      {contextLine && <p className="sc-story-eyebrow">{contextLine}</p>}
+
+      {/* 2-3. The human */}
+      {situation && (
+        <div className="sc-story-section">
+          <div className="sc-story-section-divider" />
+          <p className="sc-story-opening">{situation}</p>
+        </div>
+      )}
+
+      {/* 4-6. Problem + evidence */}
+      {probName && (
+        <div className="sc-story-section">
+          <div className="sc-story-section-label">The problem</div>
+          <h2 className="sc-story-problem-name">{probName}</h2>
+          {evidence && <p className="sc-story-body">{evidence}</p>}
+          {(observation || keyData) && (
+            <p className="sc-story-body">{[keyData, observation].filter(Boolean).join(' — ')}</p>
+          )}
+        </div>
+      )}
+
+      {/* 8. Pull quote */}
+      {insight && (
+        <div className="sc-story-pullquote">
+          <p>"{insight}"</p>
+        </div>
+      )}
+
+      {/* 9. Role */}
+      {(contribution || successCrit) && (
+        <div className="sc-story-section">
+          <div className="sc-story-section-label">Role</div>
+          {contribution && <p className="sc-story-body">{contribution}</p>}
+          {successCrit  && <p className="sc-story-body sc-story-muted">{successCrit}</p>}
+        </div>
+      )}
+
+      {/* 10. Decisions */}
+      {decisions.length > 0 && (
+        <div className="sc-story-section">
+          <div className="sc-story-section-label">The decisions</div>
+          {decisions.map((d, i) => (
+            <div key={i} className="sc-decision-block">
+              <p className="sc-decision-name">{d.name}</p>
+              {d.built    && <p className="sc-story-body">{d.built}</p>}
+              {d.rejected && (
+                <div className="sc-decision-rejected">
+                  <span className="sc-decision-rejected-label">Decided not to:</span> {d.rejected}
+                </div>
+              )}
+              {d.impact   && <p className="sc-story-body sc-story-muted">{d.impact}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 11-12. Outcome + honest */}
+      {changed && (
+        <div className="sc-story-section">
+          <div className="sc-story-section-label">The outcome</div>
+          <p className="sc-story-body">{changed}</p>
+          {honest && (
+            <div className="sc-honest-block">
+              <p>{honest}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 13. Learning */}
+      {learning && (
+        <div className="sc-learning-block">
+          <div className="sc-story-section-label sc-learning-label">The learning</div>
+          <p className="sc-learning-text">"{learning}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEdit, storyTags = [], storyBlocks = [] }) {
-  const [depth, setDepth] = useState('Glance');
+  const sf = project?.storyFlow;
+  const hasStoryContent = sf && (sf.human?.title || sf.human?.situation || sf.problem?.name);
+
+  // Default to Story tab if storyFlow has content, else Glance
+  const [depth, setDepth] = useState(hasStoryContent ? 'Story' : 'Glance');
+
   const phases = [...new Set(project.moments.map(m => m.phase))];
 
   if (!project) return null;
 
-  const editKey = `project_${project.id}`;
-  const edits = voiceEdits?.[editKey] || {};
-  const editCount = Object.keys(edits).length;
+  const editKey      = `project_${project.id}`;
+  const edits        = voiceEdits?.[editKey] || {};
+  const editCount    = Object.keys(edits).length;
   const totalSentences = project.moments.length + 3;
-  const voicePct = Math.round((editCount / totalSentences) * 100);
+  const voicePct     = Math.round((editCount / totalSentences) * 100);
 
   return (
     <div className="showcase-overlay">
@@ -130,11 +228,7 @@ export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEd
 
         <div className="showcase-tags">
           {phases.map(ph => (
-            <span
-              key={ph}
-              className="showcase-phase-badge"
-              style={{ backgroundColor: phaseColor(ph) }}
-            >
+            <span key={ph} className="showcase-phase-badge" style={{ backgroundColor: phaseColor(ph) }}>
               {phaseLabel(ph)}
             </span>
           ))}
@@ -160,15 +254,13 @@ export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEd
           </div>
 
           {depth === 'Glance' && <GlanceContent project={project} />}
-          {depth === 'Read'   && <ReadContent project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
-          {depth === 'Deep'   && <DeepContent project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
+          {depth === 'Read'   && <ReadContent   project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
+          {depth === 'Deep'   && <DeepContent   project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
+          {depth === 'Story'  && <StoryContent  project={project} />}
         </div>
 
-        {project.learning && (
-          <div
-            className="showcase-learning-block"
-            style={{ borderLeftColor: project.color, marginTop: '24px' }}
-          >
+        {project.learning && depth !== 'Story' && (
+          <div className="showcase-learning-block" style={{ borderLeftColor: project.color, marginTop: '24px' }}>
             <div className="showcase-learning-label">Practitioner learning</div>
             <div className="showcase-learning-text">"{project.learning}"</div>
           </div>
@@ -176,7 +268,7 @@ export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEd
 
         {(() => {
           const taggedBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id));
-          return taggedBlocks.length > 0 ? (
+          return taggedBlocks.length > 0 && depth !== 'Story' ? (
             <div style={{ marginTop: '24px' }}>
               <div className="showcase-eyebrow" style={{ marginBottom: '12px' }}>The story</div>
               {taggedBlocks.map(b => {
