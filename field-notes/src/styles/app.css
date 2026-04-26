@@ -2180,66 +2180,309 @@
   letter-spacing: 0.5px;
 }
 
-.depth-selector {
-  display: flex;
-  border: 0.5px solid var(--line);
-  border-radius: var(--r);
+/* ── Portfolio long-form showcase ── */
+
+/* Body wrapper: holds the fixed nav + scroll area */
+.pf-wrap {
+  flex: 1;
+  position: relative;
   overflow: hidden;
-  margin-bottom: 22px;
-  align-self: flex-start;
+  display: flex;
 }
-.depth-btn {
-  padding: 4px 12px;
-  font-size: 0.6875rem;
-  color: var(--muted);
+
+/* Fixed left nav */
+.pf-nav {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+  width: 140px;
+}
+
+.pf-nav-item {
+  display: block;
+  text-align: left;
+  padding: 5px 10px;
+  font-size: 0.5625rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  border-left: 2px solid transparent;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  transition: color 0.14s, border-color 0.14s;
+  line-height: 1.4;
 }
-.depth-btn.active {
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
-.showcase-depth-content {
-  font-size: 0.75rem;
-  color: var(--ink2);
-  line-height: 1.8;
-}
-.showcase-depth-content h4 {
-  font-size: 0.75rem;
-  font-weight: 600;
+.pf-nav-item:hover { color: var(--ink2); }
+.pf-nav-item.active {
   color: var(--ink);
-  margin: 16px 0 6px;
+  border-left-color: var(--accent);
 }
-.showcase-depth-content p { margin-bottom: 12px; }
-.showcase-depth-content ul {
-  padding-left: 18px;
-  margin-bottom: 12px;
-}
-.showcase-depth-content li { margin-bottom: 5px; }
 
-.voice-indicator {
-  display: inline-flex;
-  align-items: center;
+/* Scrollable content area */
+.pf-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+
+/* Content column */
+.pf-content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+/* Sections */
+.pf-section {
+  margin-bottom: 48px;
+}
+
+.pf-section-heading {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 16px;
+  border-bottom: 0.5px solid var(--line2);
+  padding-bottom: 6px;
+}
+
+/* Title */
+.pf-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+
+/* Meta pills */
+.pf-meta-pills {
+  display: flex;
+  flex-wrap: wrap;
   gap: 5px;
-  padding: 3px 9px;
+  margin-bottom: 20px;
+}
+.pf-meta-pill {
+  padding: 3px 10px;
   border: 0.5px solid var(--line);
   border-radius: 10px;
   font-size: 0.6875rem;
-  color: var(--muted);
-  margin-top: 16px;
+  color: var(--ink2);
+  letter-spacing: 0.3px;
 }
 
-/* editable showcase content */
-.showcase-editable {
-  cursor: text;
-  border-radius: var(--r);
-  padding: 1px 2px;
-  transition: background 0.12s;
+/* Opening paragraph */
+.pf-opening {
+  font-size: 0.875rem;
+  line-height: 1.8;
+  color: var(--ink2);
+  margin-bottom: 20px;
 }
-.showcase-editable:hover { background: var(--bg2); }
-.showcase-editable:focus { background: var(--bg2); outline: none; }
-.showcase-editable.faded { color: var(--faint); }
+
+/* Impact callout (in overview) */
+.pf-impact-callout {
+  border-left: 2px solid var(--accent);
+  background: var(--bg2);
+  border-radius: 0 3px 3px 0;
+  padding: 12px 16px;
+  margin-top: 4px;
+}
+.pf-impact-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 5px;
+}
+.pf-impact-text {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--ink2);
+  margin: 0;
+}
+
+/* Insight — large serif italic */
+.pf-insight {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.375rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+/* Callout block */
+.pf-callout {
+  border-left: 2px solid var(--ink);
+  background: var(--bg2);
+  border-radius: 0 3px 3px 0;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.pf-callout--subtle {
+  border-left-color: var(--line);
+}
+.pf-callout-label {
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.pf-callout-body {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--ink2);
+  margin: 0;
+}
+
+/* Body text */
+.pf-body {
+  font-size: 0.8125rem;
+  line-height: 1.8;
+  color: var(--ink2);
+  margin-bottom: 12px;
+}
+
+/* Bullet list (goal) */
+.pf-bullet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pf-bullet-list li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--ink2);
+}
+.pf-bullet-prefix {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Role lines */
+.pf-role-lines { display: flex; flex-direction: column; }
+.pf-role-indent { padding-left: 20px; color: var(--ink2); }
+
+/* Bet block */
+.pf-bet-block {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 0.5px solid var(--line2);
+}
+.pf-bet-block:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+.pf-bet-heading {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+/* Impact note (decisions) */
+.pf-impact-note {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--ink2);
+  margin: 8px 0 0;
+}
+.pf-impact-note-label {
+  font-weight: 500;
+  color: var(--ink);
+  margin-right: 4px;
+  font-style: normal;
+}
+
+/* Stat line (evidence) */
+.pf-stat-line {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+/* Photo grid */
+.pf-photo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pf-photo-grid--single {
+  grid-template-columns: 1fr;
+}
+.pf-photo {
+  width: 100%;
+  border-radius: 3px;
+  border: 0.5px solid var(--line);
+  display: block;
+}
+
+/* Honest block */
+.pf-honest-block {
+  border-left: 2px solid var(--ink);
+  background: var(--bg2);
+  border-radius: 0 3px 3px 0;
+  padding: 10px 14px;
+  margin-top: 16px;
+}
+.pf-honest-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+.pf-honest-text {
+  font-size: 0.8125rem;
+  font-style: italic;
+  line-height: 1.7;
+  color: var(--ink2);
+  margin: 0;
+}
+
+/* Learning block */
+.pf-learning-block {
+  background: var(--ink);
+  border-radius: 3px;
+  padding: 24px;
+  text-align: center;
+}
+.pf-learning-text {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--bg);
+  margin: 0;
+}
+
+/* Hide nav on mobile */
+@media (max-width: 900px) {
+  .pf-nav { display: none; }
+}
 
 /* ── Voice calibration onboarding ── */
 .onboarding {
@@ -2830,4 +3073,730 @@
   color: var(--muted);
   margin: 2px 0 0;
   line-height: 1.3;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   STORY FLOW BUILDER — full layout + editing UI
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Layout shell ── */
+.story-flow {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Left nav ── */
+.flow-nav {
+  width: 196px;
+  min-width: 196px;
+  flex-shrink: 0;
+  border-right: 0.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.flow-nav-top-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 16px 16px 10px;
+  flex-shrink: 0;
+}
+
+.flow-nav-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+
+.flow-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  transition: background 0.12s;
+  width: 100%;
+}
+
+.flow-nav-item:hover          { background: var(--bg2); }
+.flow-nav-item.active         { background: var(--active-bg); }
+.flow-nav-item.must-empty     { /* no special visual; handled by dot */ }
+
+.flow-nav-number {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.flow-nav-name {
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--ink2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flow-nav-item.active .flow-nav-name { color: var(--ink); font-weight: 500; }
+
+.flow-nav-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.flow-nav-dot.empty       { border: 0.5px solid var(--line); background: transparent; }
+.flow-nav-dot.in-progress { background: color-mix(in srgb, var(--accent) 45%, transparent); border: none; }
+.flow-nav-dot.complete    { background: var(--accent); border: none; }
+
+.flow-nav-footer {
+  padding: 12px 14px 16px;
+  border-top: 0.5px solid var(--line2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.flow-nav-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-completeness-bar {
+  flex: 1;
+  height: 3px;
+  background: var(--line2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.flow-completeness-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.flow-completeness-pct {
+  font-size: 0.5625rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  min-width: 28px;
+  text-align: right;
+}
+
+.flow-mentor-msg {
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.flow-generate-btn {
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: var(--r);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+  transition: opacity 0.12s;
+  text-align: center;
+  letter-spacing: 0.2px;
+  border: none;
+}
+
+.flow-generate-btn:hover:not(:disabled) { opacity: 0.85; }
+.flow-generate-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* ── Center editor ── */
+.flow-editor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 36px 48px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ── Move editor — inner structure of each move ── */
+.move-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+/* Component A — the question */
+.move-question {
+  font-style: italic;
+  font-size: 1.125rem;
+  color: var(--ink);
+  line-height: 1.4;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: -0.2px;
+}
+
+
+/* Component A2 — what works (below move question) */
+.move-what-works {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+/* Component B — rule card */
+.move-rule-card {
+  border-left: 2px solid var(--line);
+  background: var(--bg2);
+  border-radius: 0 3px 3px 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.move-rule-label {
+  font-size: 0.4375rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--faint);
+  font-weight: 600;
+}
+
+.move-rule-text {
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: var(--ink2);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Component D — mentor message (appears on move completion) */
+.move-mentor-msg {
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: var(--muted);
+  margin: 0;
+  opacity: 0;
+  animation: moveMentorFadeIn 0.4s ease 0.1s forwards;
+}
+
+@keyframes moveMentorFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Field Unit (Component C) ── */
+.fu-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Component D — label dot */
+.fu-label-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fu-label-dot {
+  width: 4px;
+  height: 4px;
+  min-width: 4px;
+  border-radius: 50%;
+  border: 0.5px solid var(--line);
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.fu-label-dot.filled {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.fu-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--faint);
+  font-weight: 500;
+}
+
+/* Input wrapper — holds input + example panel as connected unit */
+.fu-field-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.fu-input, .fu-rich {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 0.5px solid var(--line2);
+  border-radius: 2px;
+  padding: 9px 11px;
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  line-height: 1.55;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+/* Formatting toolbar */
+.fu-toolbar {
+  display: flex;
+  gap: 1px;
+  padding: 4px 8px;
+  border-bottom: 0.5px solid var(--line2);
+  background: var(--bg2);
+  border-radius: 2px 2px 0 0;
+}
+.fu-toolbar-btn {
+  padding: 2px 7px;
+  font-size: 0.6875rem;
+  color: var(--ink2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.1s, color 0.1s;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+.fu-toolbar-btn:hover {
+  background: var(--line2);
+  color: var(--ink);
+}
+
+/* Contenteditable wrapper — positions the placeholder */
+.fu-ce-wrap {
+  position: relative;
+}
+
+/* Placeholder overlay */
+.fu-placeholder {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 9px 11px;
+  color: var(--faint);
+  font-style: italic;
+  font-size: 0.75rem;
+  pointer-events: none;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Rich contenteditable — same visual as old textarea/input */
+.fu-rich {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 9px 11px;
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  line-height: 1.55;
+  outline: none;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.fu-rich--single {
+  white-space: nowrap;
+  overflow: hidden;
+  min-height: unset;
+}
+
+/* Rich text — preserve basic formatting rendered from stored HTML */
+.fu-rich b, .fu-rich strong { font-weight: 700; }
+.fu-rich i, .fu-rich em     { font-style: italic; }
+.fu-rich u                   { text-decoration: underline; }
+.fu-rich s, .fu-rich strike  { text-decoration: line-through; }
+
+/* State: has content — slightly more visible border */
+.fu-field-wrap.has-content .fu-input,
+.fu-field-wrap.has-content .fu-rich {
+  border-color: var(--line);
+}
+
+/* State: focused — accent border (applied on fu-field-wrap, not the input itself) */
+.fu-field-wrap.focused .fu-input,
+.fu-field-wrap.focused .fu-rich {
+  border-color: var(--accent);
+}
+
+/* When focused+toolbar: top radius on field is removed (toolbar sits above) */
+.fu-field-wrap.focused .fu-ce-wrap .fu-rich {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* When focused and examples exist: remove bottom radius so panel connects */
+.fu-field-wrap.focused.has-examples .fu-input,
+.fu-field-wrap.focused.has-examples .fu-rich {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+/* Component C STATE 2 — example panel */
+.fu-examples {
+  background: var(--bg2);
+  border: 0.5px solid var(--line2);
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.2s ease;
+}
+
+.fu-field-wrap.focused .fu-examples {
+  max-height: 220px;
+  border-color: var(--accent);
+}
+
+.fu-examples-inner {
+  padding: 8px 12px;
+}
+
+.fu-examples-label {
+  font-size: 0.4375rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--faint);
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.fu-example-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.fu-example-row:last-child { margin-bottom: 0; }
+
+.fu-example-dot {
+  width: 5px;
+  height: 5px;
+  min-width: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.fu-example-text {
+  font-size: 0.625rem;
+  font-style: italic;
+  color: var(--ink2);
+  line-height: 1.55;
+}
+
+/* Hint — visible when empty and unfocused */
+.fu-hint {
+  font-size: 0.5625rem;
+  font-style: italic;
+  color: var(--faint);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Pull from moments button ── */
+.flow-pull-wrap {
+  position: relative;
+  display: inline-block;
+  margin-top: 3px;
+}
+
+.flow-pull-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 0.5px solid var(--line2);
+  border-radius: 3px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.flow-pull-btn:hover,
+.flow-pull-btn.open {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.flow-pull-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  max-width: 340px;
+  background: var(--white);
+  border: 0.5px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  z-index: 50;
+  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+
+.flow-pull-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.flow-pull-item:hover { background: var(--bg2); }
+
+.flow-pull-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.flow-pull-phase {
+  font-size: 0.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  min-width: 44px;
+}
+
+.flow-pull-title {
+  font-size: 0.6875rem;
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.flow-pull-sub {
+  display: block;
+  font-size: 0.625rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+/* ── Prev / Next navigation row ── */
+.flow-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 0.5px solid var(--line2);
+  flex-shrink: 0;
+}
+
+.flow-nav-prev,
+.flow-nav-next {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  background: none;
+  border: 0.5px solid var(--line);
+  border-radius: var(--r);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.flow-nav-prev:hover,
+.flow-nav-next:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--bg2);
+}
+
+/* ── Decision cards (move 6) ── */
+.flow-decision-card {
+  background: var(--white);
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+.flow-decision-card.dragging  { opacity: 0.4; }
+.flow-decision-card.drag-over { box-shadow: 0 0 0 2px var(--accent); }
+
+.flow-decision-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-decision-drag {
+  color: var(--faint);
+  cursor: grab;
+  font-size: 0.875rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.flow-decision-drag:active { cursor: grabbing; }
+
+.flow-decision-num {
+  flex: 1;
+  font-style: italic;
+  font-size: 0.9375rem;
+  color: var(--line);
+  font-weight: 400;
+}
+
+.flow-decision-complete-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.flow-decision-remove {
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color 0.12s;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: none;
+  border: none;
+}
+
+.flow-decision-remove:hover { color: var(--color-danger); background: #fff0f0; }
+
+/* "Decided NOT to" field wrapper — left accent border */
+.flow-decision-not-wrap {
+  border-left: 2px solid var(--line2);
+  padding-left: 10px;
+}
+
+.flow-decision-not-emphasis {
+  color: var(--accent);
+}
+
+/* Add decision button */
+.flow-decision-add {
+  width: 100%;
+  border: 0.5px dashed var(--line2);
+  border-radius: 2px;
+  padding: 9px;
+  text-align: center;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--faint);
+  cursor: pointer;
+  background: none;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.flow-decision-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 640px) {
+  .story-flow {
+    flex-direction: column;
+  }
+
+  .flow-nav {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    border-right: none;
+    border-bottom: 0.5px solid var(--line);
+    flex-shrink: 0;
+  }
+
+  .flow-nav-top-label { display: none; }
+
+  .flow-nav-list {
+    flex-direction: row;
+    padding: 6px 8px;
+    gap: 2px;
+    overflow-y: visible;
+    overflow-x: auto;
+    flex-shrink: 0;
+    align-items: center;
+  }
+
+  .flow-nav-item {
+    flex-shrink: 0;
+    padding: 5px 6px;
+    gap: 4px;
+    border-radius: 4px;
+  }
+
+  .flow-nav-name { display: none; }
+  .flow-nav-footer { display: none; }
+
+  .flow-editor {
+    padding: 20px 16px 36px;
+  }
+
+  .move-question { font-size: 1rem; }
 }

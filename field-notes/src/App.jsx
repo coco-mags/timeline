@@ -22,6 +22,7 @@ import StoryBlockBuilder from './components/StoryBlockBuilder.jsx';
 import { emptyStoryBuilder } from './hooks/useStoryBlocks.js';
 import StoryFlowBuilder from './components/StoryFlowBuilder.jsx';
 import { emptyStoryFlow } from './hooks/useStoryFlow.js';
+import { DEFAULT_PORTFOLIO_DESIGN } from './data/portfolioDesign.js';
 import Toast from './components/Toast.jsx';
 
 const STORY_BLOCKS = [
@@ -48,6 +49,7 @@ function buildInitialState() {
     storyTags: [],
     voiceEdits: {},
     toast: null,
+    portfolioDesign: DEFAULT_PORTFOLIO_DESIGN,
   };
 }
 
@@ -63,6 +65,23 @@ export default function App() {
   const [learningHeight, setLearningHeight] = useState(60);
   const [isResizing,    setIsResizing]    = useState(false);
   const resizeState = useRef(null); // { side, startX/Y, startSize }
+
+  // Track whether the middle area is wide enough (sidebar × 2)
+  const [isMiddleWide, setIsMiddleWide] = useState(
+    () => window.innerWidth - 186 - 220 >= 186 * 2
+  );
+
+  useEffect(() => {
+    const check = () => {
+      const middle = window.innerWidth - leftWidth - rightWidth;
+      const wide   = middle >= leftWidth * 2;
+      setIsMiddleWide(wide);
+      setSidebarOpen(wide);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [leftWidth, rightWidth]);
 
   useEffect(() => {
     const onMove = (e) => {
@@ -310,6 +329,10 @@ export default function App() {
     showToast('Voice saved');
   }, [setState, showToast]);
 
+  const savePortfolioDesign = useCallback((portfolioDesign) => {
+    setState(s => ({ ...s, portfolioDesign }));
+  }, [setState]);
+
   const handleSetAccent = useCallback((id) => {
     setAccent(id);
     showToast('Accent updated');
@@ -511,11 +534,13 @@ export default function App() {
 
             <div className="canvas-bar-spacer" />
 
-            <span className="canvas-bar-hint">
-              {state.canvasView === 'river'  && 'Click between dots to insert · Drag to adjust height'}
-              {state.canvasView === 'contrib' && 'Phase breakdown and moment stats for this project'}
-              {state.canvasView === 'story'   && 'Write your case study · Pull from moments to quote your own work'}
-            </span>
+            {isMiddleWide && (
+              <span className="canvas-bar-hint">
+                {state.canvasView === 'river'  && 'Click between dots to insert · Drag to adjust height'}
+                {state.canvasView === 'contrib' && 'Phase breakdown and moment stats for this project'}
+                {state.canvasView === 'story'   && 'Write your case study · Pull from moments to quote your own work'}
+              </span>
+            )}
           </div>
 
           {state.canvasView === 'river' ? (
@@ -619,14 +644,8 @@ export default function App() {
       {state.showcase === 'public' && (
         <ShowcasePublic
           project={activeProject}
-          voiceEdits={state.voiceEdits}
-          onVoiceEdit={(key, val) => setState(s => ({
-            ...s,
-            voiceEdits: { ...s.voiceEdits, [key]: val },
-          }))}
           onClose={() => setState(s => ({ ...s, showcase: null }))}
-          storyTags={state.storyTags || []}
-          storyBlocks={STORY_BLOCKS}
+          portfolioDesign={state.portfolioDesign}
         />
       )}
 
@@ -639,6 +658,8 @@ export default function App() {
         appState={state}
         onSaveProfile={saveProfile}
         onSaveVoice={saveVoice}
+        portfolioDesign={state.portfolioDesign}
+        onSavePortfolioDesign={savePortfolioDesign}
       />
 
       {/* New Project Modal */}

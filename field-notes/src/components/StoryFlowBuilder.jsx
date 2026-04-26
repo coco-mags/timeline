@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { emptyStoryFlow } from '../hooks/useStoryFlow.js';
 import FlowNav    from './story/FlowNav.jsx';
 import FlowEditor from './story/FlowEditor.jsx';
-import FlowTips   from './story/FlowTips.jsx';
 
 export default function StoryFlowBuilder({ project, moments, onUpdate, onGenerateShowcase }) {
   const [activeMoveId, setActiveMoveId] = useState('human');
@@ -45,7 +44,6 @@ export default function StoryFlowBuilder({ project, moments, onUpdate, onGenerat
         learningPrefilled={learningPrefilled}
         onNav={setActiveMoveId}
       />
-      <FlowTips activeMoveId={activeMoveId} />
     </div>
   );
 }

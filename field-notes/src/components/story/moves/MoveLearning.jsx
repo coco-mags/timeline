@@ -1,25 +1,42 @@
 import React from 'react';
+import FieldUnit from '../FieldUnit.jsx';
+import { FIELD_EXAMPLES, FLOW_TIPS } from '../../../data/flowTips.js';
+
+const MOVE_QUESTION  = "What do you now understand that you didn't before? Write it like a principle.";
+const MOVE_RULE      = "Short enough to remember. Specific enough to be yours. Honest enough to be useful.";
+const MENTOR_MESSAGE = "Your story is complete. Generate the showcase when you're ready.";
+const WHAT_WORKS     = FLOW_TIPS.learning?.whatWorks;
+const REQUIRED       = ['text'];
 
 export default function MoveLearning({ data, onChange, prefilled }) {
   const set = (field, val) => onChange({ ...data, [field]: val });
+  const filledCount = REQUIRED.filter(f => data[f]?.trim()).length;
+  const isComplete  = filledCount === REQUIRED.length;
+  const ex          = FIELD_EXAMPLES.learning;
 
   return (
-    <div className="flow-fields">
-      <div className="flow-field-group">
-        <label className="flow-field-label">The learning</label>
-        <p className="flow-field-sublabel">One sentence. A principle, not a reflection.</p>
-        <textarea
-          className="flow-field-textarea"
-          style={{ minHeight: '80px' }}
-          value={data.text || ''}
-          onChange={e => set('text', e.target.value)}
-          placeholder="e.g. The real problem is always one layer below the first problem you see.&#10;e.g. The cheapest test is always better than the most elegant proposal."
-        />
-        {prefilled && (
-          <p className="flow-field-prefill-note">Pre-filled from your learning log · edit freely</p>
-        )}
-        <p className="flow-field-hint">Over time, learnings from multiple projects stack into your professional philosophy.</p>
+    <div className="move-editor">
+      <p className="move-question">{MOVE_QUESTION}</p>
+      {WHAT_WORKS && <p className="move-what-works">{WHAT_WORKS}</p>}
+
+      <div className="move-rule-card">
+        <div className="move-rule-label">the rule</div>
+        <p className="move-rule-text">{MOVE_RULE}</p>
       </div>
+
+      {isComplete && <p className="move-mentor-msg">{MENTOR_MESSAGE}</p>}
+
+      <FieldUnit
+        label="The learning"
+        value={data.text || ''}
+        onChange={val => set('text', val)}
+        placeholder="e.g. The real problem is always one layer below the first problem you see."
+        hint={prefilled ? 'Pre-filled from your learning log · edit freely' : 'One principle. The thing you now carry into every project after this one.'}
+        examples={ex.text}
+        type="textarea"
+        rows={4}
+        required
+      />
     </div>
   );
 }

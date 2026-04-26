@@ -20,11 +20,6 @@ const MOVE_COMPONENTS = {
   learning:     MoveLearning,
 };
 
-const PRIORITY_LABELS = {
-  'must-have':    'Must have',
-  'recommended':  'Strongly recommended',
-};
-
 export default function FlowEditor({ activeMoveId, storyFlow, onChange, moments, learningPrefilled, onNav }) {
   const move      = MOVE_BY_ID[activeMoveId];
   const Component = MOVE_COMPONENTS[activeMoveId];
@@ -42,22 +37,6 @@ export default function FlowEditor({ activeMoveId, storyFlow, onChange, moments,
 
   return (
     <div className="flow-editor">
-      <div className="flow-move-header">
-        <span className="flow-move-number">{move.number}</span>
-        <div className="flow-move-header-right">
-          <h2 className="flow-move-name">{move.name}</h2>
-          <span className={'flow-priority-badge ' + move.priority.replace('-', '_')}>
-            {PRIORITY_LABELS[move.priority] || move.priority}
-          </span>
-        </div>
-      </div>
-
-      <p className="flow-guidance-q">{move.guidanceQuestion}</p>
-
-      <div className="flow-rule-callout">
-        {move.rule}
-      </div>
-
       <Component
         data={data}
         onChange={handleChange}

@@ -1,291 +1,328 @@
-import React, { useState } from 'react';
-import { phaseColor, phaseLabel } from '../data/phases.js';
-import StoryValidator from './StoryValidator.jsx';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { buildDesignVars, DEFAULT_PORTFOLIO_DESIGN } from '../data/portfolioDesign.js';
 
-const DEPTHS = ['Glance', 'Read', 'Deep', 'Story'];
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
-// ── Fallback content helpers ───────────────────────────────────────────────────
-
-function fallback(sfVal, momentVal) {
-  return (sfVal && sfVal.trim()) ? sfVal : (momentVal || '');
+// Strip tags to get plain text (for logic checks only)
+function plain(html) {
+  return (html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
-// ── Depth views ────────────────────────────────────────────────────────────────
+// v() now strips tags to detect presence, but preserves HTML for rendering
+function v(s) { return (s && plain(s).length > 0) ? s.trim() : ''; }
 
-function GlanceContent({ project }) {
-  const sf     = project.storyFlow;
-  const phases = [...new Set(project.moments.map(m => m.phase))];
-  const opening = fallback(sf?.human?.situation, null) ||
-    project.moments.find(m => m.phase === 'observe')?.detail || '';
-
+// Render a field value as HTML — handles both plain text and stored rich HTML
+function Html({ html, className }) {
+  if (!html) return null;
   return (
-    <div className="showcase-depth-content">
-      <p>
-        {opening || (
-          <>
-            A practitioner-led UX initiative documenting {project.moments.length} moment
-            {project.moments.length !== 1 ? 's' : ''} across {phases.length} phase
-            {phases.length !== 1 ? 's' : ''} of work — from initial observation through implementation.
-          </>
-        )}
-      </p>
-      {project.learning && (
-        <p style={{ fontStyle: 'italic', color: 'var(--muted)', marginTop: '12px' }}>
-          Key learning: "{project.learning}"
-        </p>
-      )}
+    <div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+// Render bullets — split on <br> or newlines, prefix each with ✦
+function renderBullets(html) {
+  const lines = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+  if (lines.length <= 1) return <Html html={html} className="pf-body" />;
+  return (
+    <ul className="pf-bullet-list">
+      {lines.map((l, i) => (
+        <li key={i}><span className="pf-bullet-prefix">✦</span>{l.replace(/^[✦•\-]\s*/, '')}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Render role lines — split on <br> or newlines
+function renderRoleLines(html) {
+  const lines = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+  if (lines.length <= 1) return <Html html={html} className="pf-body" />;
+  return (
+    <div className="pf-role-lines">
+      {lines.map((l, i) => (
+        <p key={i} className={'pf-body' + (l.startsWith('⇥') ? ' pf-role-indent' : '')}>{l}</p>
+      ))}
     </div>
   );
 }
 
-function ReadContent({ project, storyTags = [], storyBlocks = [] }) {
-  const observed = project.moments.filter(m => m.phase === 'observe');
-  const tested   = project.moments.filter(m => m.phase === 'test');
-  const launched = project.moments.filter(m => m.phase === 'launch');
+// ── Section configs ────────────────────────────────────────────────────────────
 
-  const renderBadges = (m) => {
-    const blocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
-    return blocks.length > 0 ? (
-      <span style={{ display: 'inline-flex', gap: '4px', marginLeft: '6px', verticalAlign: 'middle' }}>
-        {blocks.map(b => (
-          <span key={b.id} style={{
-            fontSize: '8px', padding: '1px 6px', borderRadius: '8px',
-            backgroundColor: b.color, color: '#fff', fontWeight: 600, letterSpacing: '0.5px',
-          }}>{b.label}</span>
-        ))}
-      </span>
-    ) : null;
-  };
-
-  return (
-    <div className="showcase-depth-content">
-      {observed.length > 0 && (<><h4>What was observed</h4>{observed.map(m => <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderBadges(m)}</p>)}</>)}
-      {tested.length   > 0 && (<><h4>What was tested</h4>{tested.map(m => <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderBadges(m)}</p>)}</>)}
-      {launched.length > 0 && (<><h4>What shipped</h4>{launched.map(m => <p key={m.id}><strong>{m.title}:</strong> {m.sub}{renderBadges(m)}</p>)}</>)}
-      {project.learning && (<><h4>What was learned</h4><p style={{ fontStyle: 'italic' }}>"{project.learning}"</p></>)}
-    </div>
-  );
-}
-
-function DeepContent({ project, storyTags = [], storyBlocks = [] }) {
-  return (
-    <div className="showcase-depth-content">
-      {project.moments.map(m => {
-        const blocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id && t.momentId === m.id));
-        return (
-          <div key={m.id} style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: phaseColor(m.phase), flexShrink: 0 }} />
-              <strong style={{ fontSize: '12px', color: 'var(--ink)' }}>{m.title}</strong>
-              <span style={{ fontSize: '9px', color: phaseColor(m.phase), textTransform: 'uppercase', letterSpacing: '1.5px' }}>{m.phase}</span>
-              {blocks.map(b => (
-                <span key={b.id} style={{ fontSize: '8px', padding: '1px 6px', borderRadius: '8px', backgroundColor: b.color, color: '#fff', fontWeight: 600, letterSpacing: '0.5px' }}>{b.label}</span>
-              ))}
-            </div>
-            {m.sub    && <p style={{ color: 'var(--muted)', fontSize: '11px', marginBottom: '6px' }}>{m.sub}</p>}
-            {m.detail && <p>{m.detail}</p>}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function StoryContent({ project }) {
-  const sf = project.storyFlow || {};
-  const firstObserve = project.moments.find(m => m.phase === 'observe');
-  const lastLaunch   = project.moments.filter(m => m.phase === 'launch').at(-1);
-
-  const title       = fallback(sf.human?.title,        project.name);
-  const contextLine = fallback(sf.human?.contextLine,  '');
-  const situation   = fallback(sf.human?.situation,    firstObserve?.detail || '');
-  const probName    = fallback(sf.problem?.name,       '');
-  const evidence    = fallback(sf.problem?.evidence,   '');
-  const observation = fallback(sf.evidence?.observation, '');
-  const keyData     = fallback(sf.evidence?.keyData,   '');
-  const insight     = fallback(sf.turningPoint?.insight, '');
-  const contribution = fallback(sf.role?.contribution, '');
-  const successCrit  = fallback(sf.role?.successCriteria, '');
-  const decisions   = Array.isArray(sf.decisions) ? sf.decisions.filter(d => d.name?.trim()) : [];
-  const changed     = fallback(sf.outcome?.changed,    lastLaunch?.detail || '');
-  const honest      = fallback(sf.outcome?.honest,     '');
-  const learning    = fallback(sf.learning?.text,      project.learning || '');
-
-  return (
-    <div className="showcase-story-content">
-
-      {/* 1. Title */}
-      <h1 className="sc-story-title">{title}</h1>
-      {contextLine && <p className="sc-story-eyebrow">{contextLine}</p>}
-
-      {/* 2-3. The human */}
-      {situation && (
-        <div className="sc-story-section">
-          <div className="sc-story-section-divider" />
-          <p className="sc-story-opening">{situation}</p>
-        </div>
-      )}
-
-      {/* 4-6. Problem + evidence */}
-      {probName && (
-        <div className="sc-story-section">
-          <div className="sc-story-section-label">The problem</div>
-          <h2 className="sc-story-problem-name">{probName}</h2>
-          {evidence && <p className="sc-story-body">{evidence}</p>}
-          {(observation || keyData) && (
-            <p className="sc-story-body">{[keyData, observation].filter(Boolean).join(' — ')}</p>
-          )}
-        </div>
-      )}
-
-      {/* 8. Pull quote */}
-      {insight && (
-        <div className="sc-story-pullquote">
-          <p>"{insight}"</p>
-        </div>
-      )}
-
-      {/* 9. Role */}
-      {(contribution || successCrit) && (
-        <div className="sc-story-section">
-          <div className="sc-story-section-label">Role</div>
-          {contribution && <p className="sc-story-body">{contribution}</p>}
-          {successCrit  && <p className="sc-story-body sc-story-muted">{successCrit}</p>}
-        </div>
-      )}
-
-      {/* 10. Decisions */}
-      {decisions.length > 0 && (
-        <div className="sc-story-section">
-          <div className="sc-story-section-label">The decisions</div>
-          {decisions.map((d, i) => (
-            <div key={i} className="sc-decision-block">
-              <p className="sc-decision-name">{d.name}</p>
-              {d.built    && <p className="sc-story-body">{d.built}</p>}
-              {d.rejected && (
-                <div className="sc-decision-rejected">
-                  <span className="sc-decision-rejected-label">Decided not to:</span> {d.rejected}
-                </div>
-              )}
-              {d.impact   && <p className="sc-story-body sc-story-muted">{d.impact}</p>}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 11-12. Outcome + honest */}
-      {changed && (
-        <div className="sc-story-section">
-          <div className="sc-story-section-label">The outcome</div>
-          <p className="sc-story-body">{changed}</p>
-          {honest && (
-            <div className="sc-honest-block">
-              <p>{honest}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 13. Learning */}
-      {learning && (
-        <div className="sc-learning-block">
-          <div className="sc-story-section-label sc-learning-label">The learning</div>
-          <p className="sc-learning-text">"{learning}"</p>
-        </div>
-      )}
-    </div>
-  );
-}
+const NAV_SECTIONS = [
+  { id: 'overview',  label: 'Overview'   },
+  { id: 'moment',    label: 'The Moment' },
+  { id: 'goal',      label: 'The Goal'   },
+  { id: 'role',      label: 'My Role'    },
+  { id: 'build',     label: 'The Build'  },
+  { id: 'evidence',  label: 'Evidence'   },
+  { id: 'outcomes',  label: 'Outcomes'   },
+  { id: 'learning',  label: 'Learning'   },
+];
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export default function ShowcasePublic({ project, onClose, voiceEdits, onVoiceEdit, storyTags = [], storyBlocks = [] }) {
-  const sf = project?.storyFlow;
-  const hasStoryContent = sf && (sf.human?.title || sf.human?.situation || sf.problem?.name);
+export default function ShowcasePublic({ project, onClose, portfolioDesign }) {
+  const designVars = useMemo(
+    () => buildDesignVars(portfolioDesign || DEFAULT_PORTFOLIO_DESIGN),
+    [portfolioDesign]
+  );
+  const sf      = project?.storyFlow || {};
+  const moments = project?.moments   || [];
 
-  // Default to Story tab if storyFlow has content, else Glance
-  const [depth, setDepth] = useState(hasStoryContent ? 'Story' : 'Glance');
+  const [activeId, setActiveId] = useState('overview');
+  const sectionRefs  = useRef({});
+  const scrollAreaRef = useRef(null);
 
-  const phases = [...new Set(project.moments.map(m => m.phase))];
+  // ── Extract content ──────────────────────────────────────────────────────────
+
+  const title       = v(sf.human?.title)              || project?.name || '';
+  const contextLine = v(sf.human?.contextLine)         || '';
+  const situation   = v(sf.human?.situation)           || '';
+  const insight     = v(sf.turningPoint?.insight)      || '';
+  const tpRejected  = v(sf.turningPoint?.rejected)     || '';
+  const successCrit = v(sf.role?.successCriteria)      || '';
+  const contribution = v(sf.role?.contribution)        || '';
+  const decisions   = Array.isArray(sf.decisions)
+    ? sf.decisions.filter(d => v(d.name))
+    : [];
+  const keyData     = v(sf.evidence?.keyData)          || '';
+  const observation = v(sf.evidence?.observation)      || '';
+  const competitive = v(sf.problem?.competitive)       || '';
+  const changed     = v(sf.outcome?.changed)           || '';
+  const honest      = v(sf.outcome?.honest)            || '';
+  const learning    = v(sf.learning?.text)             || v(project?.learning) || '';
+
+  const metaPills = contextLine
+    ? contextLine.split('·').map(p => p.trim()).filter(Boolean)
+    : [];
+
+  const observePhotos = moments
+    .filter(m => ['observe', 'define'].includes(m.phase))
+    .flatMap(m => m.photos || []);
+  const launchPhotos  = moments
+    .filter(m => m.phase === 'launch')
+    .flatMap(m => m.photos || []);
+
+  // ── Section visibility ───────────────────────────────────────────────────────
+
+  const has = {
+    overview:  !!(title || situation),
+    moment:    !!(insight),
+    goal:      !!(successCrit),
+    role:      !!(contribution),
+    build:     decisions.length > 0,
+    evidence:  !!(keyData || observation || competitive || observePhotos.length),
+    outcomes:  !!(changed),
+    learning:  !!(learning),
+  };
+
+  const visibleSections = NAV_SECTIONS.filter(s => has[s.id]);
+
+  // ── IntersectionObserver ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const root = scrollAreaRef.current;
+    if (!root) return;
+    const observers = [];
+
+    visibleSections.forEach(({ id }) => {
+      const el = sectionRefs.current[id];
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        entries => { if (entries[0].isIntersecting) setActiveId(id); },
+        { root, threshold: 0.3 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+
+    return () => observers.forEach(o => o.disconnect());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleSections.map(s => s.id).join(',')]);
+
+  // ── Scroll to section ────────────────────────────────────────────────────────
+
+  const scrollTo = useCallback((id) => {
+    const el  = sectionRefs.current[id];
+    const box = scrollAreaRef.current;
+    if (!el || !box) return;
+    box.scrollTo({ top: el.offsetTop - 32, behavior: 'smooth' });
+  }, []);
+
+  const setRef = id => el => { sectionRefs.current[id] = el; };
 
   if (!project) return null;
 
-  const editKey      = `project_${project.id}`;
-  const edits        = voiceEdits?.[editKey] || {};
-  const editCount    = Object.keys(edits).length;
-  const totalSentences = project.moments.length + 3;
-  const voicePct     = Math.round((editCount / totalSentences) * 100);
-
   return (
     <div className="showcase-overlay">
+
+      {/* Header */}
       <div className="showcase-header">
         <div className="showcase-logo">field notes</div>
         <button className="showcase-close" onClick={onClose}>✕ Close</button>
       </div>
-      <div className="showcase-body">
-        <div className="showcase-eyebrow">Portfolio</div>
-        <h1 className="showcase-heading">{project.name}</h1>
 
-        <div className="showcase-tags">
-          {phases.map(ph => (
-            <span key={ph} className="showcase-phase-badge" style={{ backgroundColor: phaseColor(ph) }}>
-              {phaseLabel(ph)}
-            </span>
+      {/* Body: nav + scroll area */}
+      <div className="pf-wrap">
+
+        {/* Fixed left nav */}
+        <nav className="pf-nav" aria-label="Page sections">
+          {visibleSections.map(({ id, label }) => (
+            <button
+              key={id}
+              className={'pf-nav-item' + (activeId === id ? ' active' : '')}
+              onClick={() => scrollTo(id)}
+            >
+              {label}
+            </button>
           ))}
-          <span className="showcase-tag">{project.moments.length} moments</span>
-          {project.moments.some(m => m.photos?.length) && (
-            <span className="showcase-tag">Photo documentation</span>
-          )}
-        </div>
+        </nav>
 
-        <StoryValidator moments={project.moments} />
+        {/* Scrollable content */}
+        <div className="pf-scroll-area" ref={scrollAreaRef}>
+          <div className="pf-content" style={designVars}>
 
-        <div style={{ marginTop: '20px' }}>
-          <div className="depth-selector">
-            {DEPTHS.map(d => (
-              <button
-                key={d}
-                className={'depth-btn' + (depth === d ? ' active' : '')}
-                onClick={() => setDepth(d)}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
+            {/* ── OVERVIEW ── */}
+            {has.overview && (
+              <section ref={setRef('overview')} className="pf-section">
+                <h1 className="pf-title">{title}</h1>
 
-          {depth === 'Glance' && <GlanceContent project={project} />}
-          {depth === 'Read'   && <ReadContent   project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
-          {depth === 'Deep'   && <DeepContent   project={project} storyTags={storyTags} storyBlocks={storyBlocks} />}
-          {depth === 'Story'  && <StoryContent  project={project} />}
-        </div>
-
-        {project.learning && depth !== 'Story' && (
-          <div className="showcase-learning-block" style={{ borderLeftColor: project.color, marginTop: '24px' }}>
-            <div className="showcase-learning-label">Practitioner learning</div>
-            <div className="showcase-learning-text">"{project.learning}"</div>
-          </div>
-        )}
-
-        {(() => {
-          const taggedBlocks = storyBlocks.filter(b => storyTags.some(t => t.blockId === b.id));
-          return taggedBlocks.length > 0 && depth !== 'Story' ? (
-            <div style={{ marginTop: '24px' }}>
-              <div className="showcase-eyebrow" style={{ marginBottom: '12px' }}>The story</div>
-              {taggedBlocks.map(b => {
-                const tag = storyTags.find(t => t.blockId === b.id);
-                return (
-                  <div key={b.id} style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '8px', backgroundColor: b.color, color: '#fff', fontWeight: 700, letterSpacing: '1px', flexShrink: 0, marginTop: '2px' }}>{b.label}</span>
-                    {tag.reason && <span style={{ fontSize: '12px', color: 'var(--ink2)', fontStyle: 'italic', lineHeight: 1.5 }}>"{tag.reason}"</span>}
+                {metaPills.length > 0 && (
+                  <div className="pf-meta-pills">
+                    {metaPills.map((p, i) => (
+                      <span key={i} className="pf-meta-pill">{p}</span>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          ) : null;
-        })()}
+                )}
 
-        <div className="voice-indicator">
-          <span>{voicePct}% your voice</span>
+                {situation && <Html html={situation} className="pf-opening" />}
+
+                {changed && (
+                  <div className="pf-impact-callout">
+                    <div className="pf-impact-label">impact</div>
+                    <Html html={changed} className="pf-impact-text" />
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── THE MOMENT IT CLICKED ── */}
+            {has.moment && (
+              <section ref={setRef('moment')} className="pf-section">
+                <div className="pf-section-heading">The moment it clicked</div>
+                <Html html={insight} className="pf-insight" />
+                {tpRejected && (
+                  <div className="pf-callout">
+                    <Html html={tpRejected} className="pf-callout-body" />
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── THE GOAL ── */}
+            {has.goal && (
+              <section ref={setRef('goal')} className="pf-section">
+                <div className="pf-section-heading">The goal</div>
+                {renderBullets(successCrit)}
+              </section>
+            )}
+
+            {/* ── MY ROLE ── */}
+            {has.role && (
+              <section ref={setRef('role')} className="pf-section">
+                <div className="pf-section-heading">My role</div>
+                {renderRoleLines(contribution)}
+              </section>
+            )}
+
+            {/* ── THE BUILD: A STORY IN BETS ── */}
+            {has.build && (
+              <section ref={setRef('build')} className="pf-section">
+                <div className="pf-section-heading">The build: a story in bets</div>
+                {decisions.map((d, i) => (
+                  <div key={i} className="pf-bet-block">
+                    <div className="pf-bet-heading">Bet {i + 1} — {plain(d.name)}</div>
+                    {v(d.built) && <Html html={d.built} className="pf-body" />}
+                    {v(d.rejected) && (
+                      <div className="pf-callout pf-callout--subtle">
+                        <span className="pf-callout-label">decided not to:</span>
+                        <Html html={d.rejected} className="pf-callout-body pf-callout-body--inline" />
+                      </div>
+                    )}
+                    {v(d.impact) && (
+                      <p className="pf-impact-note">
+                        <span className="pf-impact-note-label">✨ Why it matters?</span>
+                        <Html html={d.impact} className="pf-impact-note-body" />
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {/* ── THE EVIDENCE ── */}
+            {has.evidence && (
+              <section ref={setRef('evidence')} className="pf-section">
+                <div className="pf-section-heading">The evidence</div>
+                {keyData     && <Html html={keyData}     className="pf-stat-line" />}
+                {observation && <Html html={observation} className="pf-body" />}
+                {competitive && <Html html={competitive} className="pf-body" />}
+                {observePhotos.length > 0 && (
+                  <div className="pf-photo-grid">
+                    {observePhotos.map((src, i) => (
+                      <img key={i} src={src} alt="" className="pf-photo" />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── OUTCOMES ── */}
+            {has.outcomes && (
+              <section ref={setRef('outcomes')} className="pf-section">
+                <div className="pf-section-heading">Outcomes</div>
+                <Html html={changed} className="pf-body" />
+                {honest && (
+                  <div className="pf-honest-block">
+                    <div className="pf-honest-label">the honest part</div>
+                    <Html html={honest} className="pf-honest-text" />
+                  </div>
+                )}
+                {launchPhotos.length > 0 && (
+                  <div className="pf-photo-grid pf-photo-grid--single" style={{ marginTop: '16px' }}>
+                    {launchPhotos.map((src, i) => (
+                      <img key={i} src={src} alt="" className="pf-photo" />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── WHAT I LEARNED ── */}
+            {has.learning && (
+              <section ref={setRef('learning')} className="pf-section">
+                <div className="pf-section-heading">What I learned</div>
+                <div className="pf-learning-block">
+                  <Html html={`"${plain(learning)}"`} className="pf-learning-text" />
+                </div>
+              </section>
+            )}
+
+          </div>
         </div>
       </div>
     </div>
